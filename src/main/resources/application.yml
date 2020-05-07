@@ -1,0 +1,16 @@
+api:
+    basePackage: no.esa.battleship
+server:
+    port: 8098
+spring:
+    flyway:
+        schemas: "battleship"
+        locations: classpath:db/migration/common
+        out-of-order: true
+        table: "schema_version"
+        baseline-on-migrate: true
+    datasource:
+        url: jdbc:postgresql://localhost:5432/postgres
+        username: postgres
+        password: oca2f
+        driver-class-name: org.postgresql.Driver
