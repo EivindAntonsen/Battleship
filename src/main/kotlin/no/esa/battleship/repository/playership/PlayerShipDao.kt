@@ -26,7 +26,7 @@ class PlayerShipDao(private val logger: Logger,
     }
 
     override fun find(id: Int): Ship {
-        val query = QueryFileReader.readSqlFile("/playership/getShip.sql")
+        val query = QueryFileReader.readSqlFile("/playership/findShip.sql")
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, id)
         }
