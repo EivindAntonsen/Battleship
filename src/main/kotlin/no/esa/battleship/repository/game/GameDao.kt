@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
+import java.time.LocalDateTime
 
 @Repository
 class GameDao(private val logger: Logger,
@@ -21,19 +22,24 @@ class GameDao(private val logger: Logger,
         private const val TABLE_NAME = "game"
         private const val PRIMARY_KEY = "id"
         private const val DATETIME = "datetime"
-    }
-
-    override fun find(gameId: Int): Game? {
-        TODO("Not yet implemented")
+        private const val IS_CONCLUDED = "is_concluded"
     }
 
     @Synchronized
-    override fun save(): Int {
-        TODO("Not yet implemented")
-    }
+    override fun save(datetime: LocalDateTime): Int {
+        val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
+            schemaName = SCHEMA_NAME
+            tableName = TABLE_NAME
+            usingGeneratedKeyColumns(PRIMARY_KEY)
+        }
 
-    @Synchronized
-    override fun delete(gameId: Int): Int {
-        TODO("Not yet implemented")
+        val parameterSource = MapSqlParameterSource().apply {
+            addValue(DATETIME, datetime)
+            addValue(IS_CONCLUDED, false)
+        }
+
+        return logger.log {
+            simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+        }
     }
 }

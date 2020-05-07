@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class PlayerBoardHistoryDao(private val logger: Logger,
-                            private val jdbcTemplate: JdbcTemplate) {
+                            private val jdbcTemplate: JdbcTemplate): IPlayerBoardHistoryDao {
 
     companion object {
         private const val SCHEMA_NAME = "battleship"
