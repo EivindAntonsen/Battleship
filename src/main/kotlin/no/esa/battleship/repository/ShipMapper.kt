@@ -1,22 +1,20 @@
 package no.esa.battleship.repository
 
 import no.esa.battleship.exceptions.NoSuchShipTypeException
-import no.esa.battleship.game.Ship
-import no.esa.battleship.game.Ship.*
-import no.esa.battleship.game.ShipComponent
+import no.esa.battleship.repository.model.Ship
+import no.esa.battleship.repository.model.Ship.*
 
 object ShipMapper {
 
     fun fromShipTypeIdWithParameters(id: Int,
                                      playerId: Int,
-                                     components: List<ShipComponent>,
                                      shipTypeId: Int): Ship {
         return when (shipTypeId) {
-            1 -> Carrier(id, playerId, components)
-            2 -> Battleship(id, playerId, components)
-            3 -> Cruiser(id, playerId, components)
-            4 -> Submarine(id, playerId, components)
-            5 -> PatrolBoat(id, playerId, components)
+            1 -> Carrier(id, playerId)
+            2 -> Battleship(id, playerId)
+            3 -> Cruiser(id, playerId)
+            4 -> Submarine(id, playerId)
+            5 -> PatrolBoat(id, playerId)
             else -> throw NoSuchShipTypeException(shipTypeId)
         }
     }

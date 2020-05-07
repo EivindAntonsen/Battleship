@@ -1,7 +1,6 @@
 package no.esa.battleship.repository.player
 
-import no.esa.battleship.game.Player
-import java.util.*
+import no.esa.battleship.repository.model.Player
 
 interface IPlayerDao {
 

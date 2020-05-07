@@ -1,8 +1,9 @@
 package no.esa.battleship.service
 
 import no.esa.battleship.exceptions.TooManyPlayersException
-import no.esa.battleship.game.Game
-import no.esa.battleship.game.Player
+import no.esa.battleship.repository.model.Coordinate
+import no.esa.battleship.repository.model.Game
+import no.esa.battleship.repository.model.Player
 import no.esa.battleship.repository.boardcoordinate.IBoardCoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
@@ -13,12 +14,12 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
-class GameService(private val boardCoordinateDao: IBoardCoordinateDao,
-                  private val gameDao: IGameDao,
-                  private val playerDao: IPlayerDao,
-                  private val playerBoardHistoryDao: IPlayerBoardHistoryDao,
-                  private val playerShipDao: IPlayerShipDao,
-                  private val playerShipComponentDao: IPlayerShipComponentDao) {
+class GameInitializationService(private val boardCoordinateDao: IBoardCoordinateDao,
+                                private val gameDao: IGameDao,
+                                private val playerDao: IPlayerDao,
+                                private val playerBoardHistoryDao: IPlayerBoardHistoryDao,
+                                private val playerShipDao: IPlayerShipDao,
+                                private val playerShipComponentDao: IPlayerShipComponentDao) {
 
     fun newGame(): Game {
         val currentTime = LocalDateTime.now()
@@ -36,4 +37,11 @@ class GameService(private val boardCoordinateDao: IBoardCoordinateDao,
             Player(playerId, game.id)
         } else throw TooManyPlayersException(game.id)
     }
+
+    /**
+     * Gets every coordinate for the game board.
+     *
+     * These are static, and the same for every player.
+     */
+    fun getBoardCoordinates(): List<Coordinate> = boardCoordinateDao.findAll()
 }

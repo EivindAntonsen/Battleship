@@ -1,7 +1,7 @@
 package no.esa.battleship.repository.player
 
 import QueryFileReader
-import no.esa.battleship.game.Player
+import no.esa.battleship.repository.model.Player
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -15,10 +15,10 @@ class PlayerDao(private val logger: Logger,
                 private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
 
     companion object {
-        private const val SCHEMA_NAME = "battleship"
-        private const val TABLE_NAME = "game"
-        private const val PRIMARY_KEY = "id"
-        private const val GAME_ID = "game_id"
+        const val SCHEMA_NAME = "battleship"
+        const val TABLE_NAME = "game"
+        const val PRIMARY_KEY = "id"
+        const val GAME_ID = "game_id"
     }
 
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)

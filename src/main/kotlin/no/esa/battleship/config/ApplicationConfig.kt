@@ -31,7 +31,10 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
                 .locations("classpath:db/migration/common", "classpath:db/migration/deploy")
                 .outOfOrder(true)
                 .table("schema_version")
-                .load()
+                .load().also {
+                    it.clean()
+                    it.migrate()
+                }
     }
 
     @Bean

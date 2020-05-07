@@ -1,4 +1,4 @@
-package no.esa.battleship.game
+package no.esa.battleship.repository.model
 
 import java.time.LocalDateTime
 
