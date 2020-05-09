@@ -1,6 +1,6 @@
 package no.esa.battleship.repository.player
 
-import no.esa.battleship.repository.model.Player
+import no.esa.battleship.service.domain.Player
 
 interface IPlayerDao {
 

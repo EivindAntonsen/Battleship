@@ -1,8 +1,8 @@
 package no.esa.battleship.repository
 
 import no.esa.battleship.exceptions.NoSuchShipTypeException
-import no.esa.battleship.repository.model.Ship
-import no.esa.battleship.repository.model.Ship.*
+import no.esa.battleship.service.domain.Ship
+import no.esa.battleship.service.domain.Ship.*
 
 object ShipMapper {
 

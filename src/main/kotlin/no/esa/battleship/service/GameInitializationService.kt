@@ -1,34 +1,40 @@
 package no.esa.battleship.service
 
 import no.esa.battleship.exceptions.TooManyPlayersException
-import no.esa.battleship.repository.model.Coordinate
-import no.esa.battleship.repository.model.Game
-import no.esa.battleship.repository.model.Player
-import no.esa.battleship.repository.boardcoordinate.IBoardCoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
-import no.esa.battleship.repository.playerboardhistory.IPlayerBoardHistoryDao
-import no.esa.battleship.repository.playership.IPlayerShipDao
-import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
+import no.esa.battleship.service.domain.Game
+import no.esa.battleship.service.domain.Player
+import org.slf4j.Logger
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
-class GameInitializationService(private val boardCoordinateDao: IBoardCoordinateDao,
+class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
-                                private val playerBoardHistoryDao: IPlayerBoardHistoryDao,
-                                private val playerShipDao: IPlayerShipDao,
-                                private val playerShipComponentDao: IPlayerShipComponentDao) {
+                                private val shipPlacementService: ShipPlacementService) : IGameInitializationService {
 
-    fun newGame(): Game {
+    override fun initializeNewGame(): Game {
+        logger.info("Initializing new game.")
+        val game = newGame()
+
+        repeat(2) {
+            shipPlacementService.placeShipsForPlayer(newPlayer(game).id)
+        }
+
+        logger.info("Game (id=${game.id}) initialized and ships placed. Ready to start.")
+        return game
+    }
+
+    private fun newGame(): Game {
         val currentTime = LocalDateTime.now()
         val id = gameDao.save(currentTime)
 
         return Game(id, currentTime)
     }
 
-    fun newPlayer(game: Game): Player {
+    private fun newPlayer(game: Game): Player {
         val currentPlayers = playerDao.findPlayersInGame(game.id)
 
         return if (currentPlayers.size in 0..1) {
@@ -37,11 +43,4 @@ class GameInitializationService(private val boardCoordinateDao: IBoardCoordinate
             Player(playerId, game.id)
         } else throw TooManyPlayersException(game.id)
     }
-
-    /**
-     * Gets every coordinate for the game board.
-     *
-     * These are static, and the same for every player.
-     */
-    fun getBoardCoordinates(): List<Coordinate> = boardCoordinateDao.findAll()
 }

@@ -1,5 +1,6 @@
 package no.esa.battleship.utils
 
+import no.esa.battleship.service.domain.Coordinate
 import org.slf4j.Logger
 
 const val STRING_MAX_LENGTH = 100
@@ -26,7 +27,10 @@ fun <R> Logger.log(identifier: String? = null, value: Any? = null, function: () 
     } else info("Call    \t${className}\t$functionName\t($identifier = ${value.toString().abbreviate()})")
 
     val (response, duration) = executeAndMeasureTimeMillis(function)
-    info("Response\t${response.toString().abbreviate()} in ${duration}ms.")
+    info("Response\t${response.toString().abbreviate()}\tin ${duration}ms.")
 
     return response
 }
+
+infix fun Coordinate.isHorizontallyAlignedWith(coordinate: Coordinate): Boolean = horizontal_position == coordinate.horizontal_position
+infix fun Coordinate.isVerticallyAlignedWith(coordinate: Coordinate): Boolean = vertical_position == coordinate.vertical_position

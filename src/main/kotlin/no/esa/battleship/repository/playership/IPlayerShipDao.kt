@@ -1,8 +1,9 @@
 package no.esa.battleship.repository.playership
 
-import no.esa.battleship.repository.model.Ship
+import no.esa.battleship.service.domain.Ship
 
 interface IPlayerShipDao {
     fun find(id: Int): Ship
-    fun save(ship: Ship): Int
+    fun findAllShipsForPlayer(playerId: Int): List<Ship>
+    fun save(playerId: Int, shipTypeId: Int): Ship
 }

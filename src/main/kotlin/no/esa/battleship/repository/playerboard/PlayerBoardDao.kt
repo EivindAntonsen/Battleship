@@ -1,8 +1,8 @@
 package no.esa.battleship.repository.playerboard
 
 import QueryFileReader
-import no.esa.battleship.repository.model.PlayerBoard
 import no.esa.battleship.exceptions.InvalidGameStateException
+import no.esa.battleship.service.domain.PlayerBoard
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -16,7 +16,7 @@ class PlayerBoardDao(private val logger: Logger,
 
     companion object {
         const val SCHEMA_NAME = "battleship"
-        const val TABLE_NAME = "game"
+        const val TABLE_NAME = "player_board"
         const val PRIMARY_KEY = "id"
         const val PLAYER_ID = "player_id"
     }

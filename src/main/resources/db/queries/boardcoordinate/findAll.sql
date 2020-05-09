@@ -1,1 +1,2 @@
-select * from battleship.board_coordinate;
+select *
+from battleship.board_coordinate;

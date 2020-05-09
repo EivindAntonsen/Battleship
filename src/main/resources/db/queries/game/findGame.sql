@@ -1,3 +1,3 @@
 select *
-from battleship.player
+from battleship.game
 where id = :id;

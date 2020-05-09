@@ -1,4 +1,4 @@
-package no.esa.battleship.repository.model
+package no.esa.battleship.service.domain
 
 data class ShipComponent(val id: Int,
                          val playerShipId: Int,

@@ -1,4 +1,4 @@
-package no.esa.battleship.repository.model
+package no.esa.battleship.service.domain
 
 import java.time.LocalDateTime
 

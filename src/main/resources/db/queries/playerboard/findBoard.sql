@@ -1,1 +1,2 @@
-select * from battleship.player_board;
+select *
+from battleship.player_board;

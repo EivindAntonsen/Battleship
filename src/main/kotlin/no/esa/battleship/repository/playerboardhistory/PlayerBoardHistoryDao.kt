@@ -10,7 +10,7 @@ class PlayerBoardHistoryDao(private val logger: Logger,
 
     companion object {
         const val SCHEMA_NAME = "battleship"
-        const val TABLE_NAME = "game"
+        const val TABLE_NAME = "player_board_history"
         const val PRIMARY_KEY = "id"
         const val PLAYER_BOARD_ID = "player_board_id"
         const val BOARD_COORDINATE_ID = "board_coordinate_id"

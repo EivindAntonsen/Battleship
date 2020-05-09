@@ -1,7 +1,7 @@
 package no.esa.battleship.repository.boardcoordinate
 
 import QueryFileReader
-import no.esa.battleship.repository.model.Coordinate
+import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.cache.annotation.Cacheable
@@ -14,7 +14,7 @@ class BoardCoordinateDao(private val logger: Logger,
 
     companion object {
         const val SCHEMA_NAME = "battleship"
-        const val TABLE_NAME = "game"
+        const val TABLE_NAME = "board_coordinate"
         const val PRIMARY_KEY = "id"
         const val X_COORDINATE = "x_coordinate"
         const val Y_COORDINATE = "y_coordinate"
@@ -27,8 +27,8 @@ class BoardCoordinateDao(private val logger: Logger,
         return logger.log {
             jdbcTemplate.query(query) { rs, _ ->
                 Coordinate(rs.getInt(PRIMARY_KEY),
-                        rs.getString(X_COORDINATE)[0],
-                        rs.getInt(Y_COORDINATE))
+                           rs.getString(X_COORDINATE)[0],
+                           rs.getInt(Y_COORDINATE))
             }
         }
     }

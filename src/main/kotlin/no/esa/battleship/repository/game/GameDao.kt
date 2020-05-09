@@ -1,5 +1,8 @@
 package no.esa.battleship.repository.game
 
+import QueryFileReader
+import no.esa.battleship.exceptions.NoSuchGameException
+import no.esa.battleship.service.domain.Game
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -21,6 +24,21 @@ class GameDao(private val logger: Logger,
         const val PRIMARY_KEY = "id"
         const val DATETIME = "datetime"
         const val IS_CONCLUDED = "is_concluded"
+    }
+
+    override fun get(gameId: Int): Game {
+        val query = QueryFileReader.readSqlFile("game/findGame")
+        val parameterSource = MapSqlParameterSource().apply {
+            addValue(PRIMARY_KEY, gameId)
+        }
+
+        return logger.log("gameId", gameId) {
+            namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
+
+                Game(gameId, dateTime)
+            } ?: throw NoSuchGameException(gameId)
+        }
     }
 
     @Synchronized
