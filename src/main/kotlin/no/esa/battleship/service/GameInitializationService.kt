@@ -1,6 +1,7 @@
 package no.esa.battleship.service
 
-import no.esa.battleship.exceptions.TooManyPlayersException
+import no.esa.battleship.exceptions.GameInitialization
+import no.esa.battleship.exceptions.GameInitialization.*
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.service.domain.Game

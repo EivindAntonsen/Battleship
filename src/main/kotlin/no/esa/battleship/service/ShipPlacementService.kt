@@ -4,7 +4,7 @@ import no.esa.battleship.enums.Plane
 import no.esa.battleship.enums.Plane.HORIZONTAL
 import no.esa.battleship.enums.Plane.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.GameInitializationException.ShipPlacementException
+import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
 import no.esa.battleship.repository.boardcoordinate.IBoardCoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
@@ -47,7 +47,6 @@ class ShipPlacementService(private val logger: Logger,
         logger.info("Placed ${ships.size} ships for player $playerId.")
     }
 
-    @Retryable(ShipPlacementException::class)
     private fun placeShip(playerId: Int,
                           plane: Plane,
                           availableCoordinates: List<Coordinate>,
@@ -60,9 +59,10 @@ class ShipPlacementService(private val logger: Logger,
                                                                          plane,
                                                                          shipType)
 
-        val selectedComponentCoordinates = shipComponentCoordinateOptions.firstOrNull { coordinates ->
+        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinates ->
             availableCoordinates.containsAll(coordinates)
         } ?: throw ShipPlacementException("Could not place ship: Unable to verify all found coordinates were available.")
+
         val ship = playerShipDao.save(playerId, shipType.id)
         playerShipComponentDao.save(ship.id, selectedComponentCoordinates)
 

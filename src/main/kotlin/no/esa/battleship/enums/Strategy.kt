@@ -12,5 +12,13 @@ enum class Strategy(val id: Int) {
 
     RANDOMIZER(1),
     MATHEMATICIAN(2),
-    MIMIC(3)
+    MIMIC(3);
+
+    companion object {
+        fun fromInt(id: Int): Strategy? {
+            return values().firstOrNull {
+                it.id == id
+            }
+        }
+    }
 }
