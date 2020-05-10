@@ -1,7 +1,6 @@
 package no.esa.battleship.service
 
-import no.esa.battleship.enums.Direction
-import no.esa.battleship.enums.Direction.*
+import no.esa.battleship.enums.Plane
 import no.esa.battleship.enums.Plane.HORIZONTAL
 import no.esa.battleship.enums.Plane.VERTICAL
 import no.esa.battleship.enums.ShipType
@@ -42,7 +41,7 @@ class ShipPlacementService(private val logger: Logger,
         val ships = ShipType.values().map { shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
 
-            placeShip(playerId, Direction.random(), availableCoordinates, shipType)
+            placeShip(playerId, Plane.random(), availableCoordinates, shipType)
         }
 
         logger.info("Placed ${ships.size} ships for player $playerId.")
@@ -50,117 +49,52 @@ class ShipPlacementService(private val logger: Logger,
 
     @Retryable(ShipPlacementException::class)
     private fun placeShip(playerId: Int,
-                          direction: Direction,
+                          plane: Plane,
                           availableCoordinates: List<Coordinate>,
                           shipType: ShipType): Ship {
 
-        val coordinatesEligibleForIndexPosition = getCoordinatesEligibleForIndexPosition(availableCoordinates,
-                                                                                         direction,
-                                                                                         shipType)
-        val shipComponentCoordinateOptions = getShipComponentCoordinates(coordinatesEligibleForIndexPosition,
-                                                                         direction,
+        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinates,
+                                                                         plane,
+                                                                         shipType)
+        val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates,
+                                                                         plane,
                                                                          shipType)
 
-        val selectedComponents = shipComponentCoordinateOptions.first()
+        val selectedComponentCoordinates = shipComponentCoordinateOptions.firstOrNull { coordinates ->
+            availableCoordinates.containsAll(coordinates)
+        } ?: throw ShipPlacementException("Could not place ship: Unable to verify all found coordinates were available.")
         val ship = playerShipDao.save(playerId, shipType.id)
-        playerShipComponentDao.save(ship.id, selectedComponents)
+        playerShipComponentDao.save(ship.id, selectedComponentCoordinates)
 
         return ship
     }
 
-    private fun getShipComponentCoordinates(coordinates: List<Coordinate>,
-                                            direction: Direction,
+    private fun getShipComponentCoordinates(availableCoordinates: List<Coordinate>,
+                                            plane: Plane,
                                             shipType: ShipType): List<List<Coordinate>> {
 
-        return coordinates.shuffled().map { index ->
-            val filteredCoordinates = filterCoordinatesToFitWithIndex(coordinates, index, direction)
-            val componentCoordinates = getFinalShipCoordinates(filteredCoordinates, index, direction, shipType)
+        return availableCoordinates.shuffled().mapNotNull { index ->
+            val vIndex = index.vertical_position
+            val hIndex = X_Y_MAP[index.horizontal_position]!!
 
-            if (componentCoordinates.isNotEmpty()) componentCoordinates else emptyList()
-        }.filter {
-            it.size == shipType.size
-        }.ifEmpty {
-            throw ShipPlacementException("Unable to generate a list of coordinates for " +
-                                                 "$shipType heading $direction!")
-        }
-    }
+            val allowedRange = if (plane == VERTICAL) {
+                vIndex until vIndex + shipType.size
+            } else hIndex until (hIndex + shipType.size)
 
-    /**
-     * This filters a list of coordinates to match the direction & plane of an index coordinate.
-     */
-    private fun filterCoordinatesToFitWithIndex(availableCoordinates: List<Coordinate>,
-                                                index: Coordinate,
-                                                direction: Direction): List<Coordinate> {
-        return availableCoordinates.filter { coordinate ->
-            when (direction.plane) {
-                VERTICAL -> index isHorizontallyAlignedWith coordinate
-                HORIZONTAL -> index isVerticallyAlignedWith coordinate
-            }
-        }.filter { coordinate ->
-            when (direction) {
-                NORTH_SOUTH -> coordinate.vertical_position >= index.vertical_position
-                SOUTH_NORTH -> coordinate.vertical_position <= index.vertical_position
-                WEST_EAST -> X_Y_MAP[coordinate.horizontal_position]!! >= X_Y_MAP[index.horizontal_position]!!
-                EAST_WEST -> X_Y_MAP[coordinate.horizontal_position]!! <= X_Y_MAP[index.horizontal_position]!!
-            }
-        }
-    }
-
-    private fun getFinalShipCoordinates(filteredCoordinates: List<Coordinate>,
-                                        index: Coordinate,
-                                        direction: Direction,
-                                        shipType: ShipType): List<Coordinate> {
-
-        val componentCoordinates = filteredCoordinates
-                .sortedWith(coordinateComparator(direction))
-                .take(shipType.size)
-
-        val noGapsInCoordinates = noGapsInCoordinates(componentCoordinates, index, direction, shipType)
-        val sizeFitsShip = componentCoordinates.size == shipType.size
-        val requirements = listOf(noGapsInCoordinates, sizeFitsShip)
-
-        return if (requirements.all { true }) {
-            componentCoordinates
-        } else emptyList()
-    }
-
-    private fun coordinateComparator(direction: Direction): Comparator<Coordinate> {
-        return Comparator { first, second ->
-            if (direction.plane == VERTICAL) {
-                when {
-                    first.vertical_position > second.vertical_position -> if (direction == NORTH_SOUTH) 1 else -1
-                    first.vertical_position < second.vertical_position -> if (direction == NORTH_SOUTH) -1 else 1
-                    else -> 0
+            availableCoordinates.filter { coordinate ->
+                if (plane == VERTICAL) {
+                    coordinate isHorizontallyAlignedWith index
+                            && coordinate.vertical_position in allowedRange
+                } else {
+                    coordinate isVerticallyAlignedWith index
+                            && X_Y_MAP[coordinate.horizontal_position]!! in allowedRange
                 }
-            } else {
-                when {
-                    first.horizontal_position > second.horizontal_position -> if (direction == WEST_EAST) 1 else -1
-                    first.horizontal_position > second.horizontal_position -> if (direction == WEST_EAST) -1 else 1
-                    else -> 0
-                }
-            }
-        }
-    }
+            }.ifEmpty {
+                logger.error("Found no suitable coordinates for ship $shipType $plane from ${availableCoordinates.size} options.")
 
-    private fun noGapsInCoordinates(coordinates: List<Coordinate>,
-                                    index: Coordinate,
-                                    direction: Direction,
-                                    shipType: ShipType): Boolean {
-
-        return coordinates.all { coordinate ->
-            when (direction) {
-                NORTH_SOUTH -> coordinate.vertical_position in index.vertical_position..(index.vertical_position + shipType.size)
-                SOUTH_NORTH -> coordinate.vertical_position in index.vertical_position..(index.vertical_position - shipType.size)
-                EAST_WEST -> {
-                    val finalCoordinate = X_Y_MAP[index.horizontal_position]!! - shipType.size
-
-                    X_Y_MAP[coordinate.horizontal_position] in X_Y_MAP[index.horizontal_position]!!..finalCoordinate
-                }
-                WEST_EAST -> {
-                    val bound = X_Y_MAP[index.horizontal_position]!! + shipType.size
-
-                    X_Y_MAP[coordinate.horizontal_position] in X_Y_MAP[index.horizontal_position]!!..bound
-                }
+                throw ShipPlacementException("Unable to generate a list of coordinates on a $plane plane for $shipType!")
+            }.takeIf {
+                it.size == shipType.size
             }
         }
     }
@@ -175,15 +109,15 @@ class ShipPlacementService(private val logger: Logger,
      * to the edge for the current ship.
      */
     private fun getCoordinatesEligibleForIndexPosition(availableCoordinates: List<Coordinate>,
-                                                       direction: Direction,
+                                                       plane: Plane,
                                                        shipType: ShipType): List<Coordinate> {
 
-        val blacklist = if (direction == NORTH_SOUTH || direction == WEST_EAST) {
+        val blacklist = if (plane == VERTICAL) {
             (MAX_BOARD_LENGTH - shipType.size + 1)..MAX_BOARD_LENGTH
         } else 1..shipType.size
 
         return availableCoordinates.filter { coordinate ->
-            when (direction.plane) {
+            when (plane) {
                 VERTICAL -> coordinate.vertical_position !in blacklist
                 HORIZONTAL -> X_Y_MAP[coordinate.horizontal_position] !in blacklist
             }

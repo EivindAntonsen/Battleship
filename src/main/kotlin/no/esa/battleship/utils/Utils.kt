@@ -32,5 +32,21 @@ fun <R> Logger.log(identifier: String? = null, value: Any? = null, function: () 
     return response
 }
 
-infix fun Coordinate.isHorizontallyAlignedWith(coordinate: Coordinate): Boolean = horizontal_position == coordinate.horizontal_position
-infix fun Coordinate.isVerticallyAlignedWith(coordinate: Coordinate): Boolean = vertical_position == coordinate.vertical_position
+infix fun Coordinate.isHorizontallyAlignedWith(that: Coordinate): Boolean {
+    return this.horizontal_position == that.horizontal_position
+}
+infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
+    return this.vertical_position == that.vertical_position
+}
+infix fun Coordinate.isAdjacentWith(that: Coordinate): Boolean {
+    return when {
+        this isHorizontallyAlignedWith that -> {
+            this.vertical_position - that.vertical_position in listOf(-1, 0, 1)
+
+        }
+        this isVerticallyAlignedWith that -> {
+            this.horizontal_position - that.horizontal_position in listOf(-1, 0, 1)
+        }
+        else -> false
+    }
+}

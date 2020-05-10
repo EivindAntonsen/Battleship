@@ -18,13 +18,15 @@ class GameInitializationService(private val logger: Logger,
 
     override fun initializeNewGame(): Game {
         return logger.log {
-            newGame().also {
-                newPlayer(it).run { shipPlacementService.placeShipsForPlayer(this.id) }
-                newPlayer(it).run { shipPlacementService.placeShipsForPlayer(this.id) }
-            }
+            val game = newGame()
 
+            val player1 = newPlayer(game)
+            shipPlacementService.placeShipsForPlayer(player1.id)
+            val player2 = newPlayer(game)
+            shipPlacementService.placeShipsForPlayer(player2.id)
+
+            game
         }
-
     }
 
     private fun newGame(): Game {
