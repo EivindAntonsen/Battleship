@@ -11,10 +11,16 @@ import no.esa.battleship.enums.Plane.VERTICAL
  * placed with the index component being placed first,
  * and then the next components after wards.
  */
-enum class ShipDirection(val plane: Plane) {
+enum class Direction(val plane: Plane) {
 
     NORTH_SOUTH(VERTICAL),
     EAST_WEST(HORIZONTAL),
     SOUTH_NORTH(VERTICAL),
-    WEST_EAST(HORIZONTAL)
+    WEST_EAST(HORIZONTAL);
+
+    companion object {
+        fun random(): Direction {
+            return values().toList().shuffled().first()
+        }
+    }
 }

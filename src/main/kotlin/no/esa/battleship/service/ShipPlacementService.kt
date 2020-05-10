@@ -1,13 +1,11 @@
 package no.esa.battleship.service
 
-import no.esa.battleship.enums.Plane
+import no.esa.battleship.enums.Direction
+import no.esa.battleship.enums.Direction.*
 import no.esa.battleship.enums.Plane.HORIZONTAL
 import no.esa.battleship.enums.Plane.VERTICAL
-import no.esa.battleship.enums.ShipDirection
-import no.esa.battleship.enums.ShipDirection.*
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.GameInitializationException.NoValidCoordinatesForShipPlacementException
-import no.esa.battleship.exceptions.InvalidGameStateException
+import no.esa.battleship.exceptions.GameInitializationException.ShipPlacementException
 import no.esa.battleship.repository.boardcoordinate.IBoardCoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
@@ -16,8 +14,8 @@ import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.slf4j.Logger
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
-import kotlin.random.Random
 
 @Service
 class ShipPlacementService(private val logger: Logger,
@@ -27,7 +25,7 @@ class ShipPlacementService(private val logger: Logger,
 
     companion object {
         private const val MAX_BOARD_LENGTH = 10
-        private val COORDINATE_X_Y_MAPPING = mapOf(
+        private val X_Y_MAP = mapOf(
                 'a' to 1,
                 'b' to 2,
                 'c' to 3,
@@ -41,102 +39,127 @@ class ShipPlacementService(private val logger: Logger,
     }
 
     fun placeShipsForPlayer(playerId: Int) {
-        ShipType.values().map {
+        val ships = ShipType.values().map { shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
-            val shipDirection = randomlyDecideShipDirection()
 
-            placeShip(playerId, shipDirection, availableCoordinates, it)
+            placeShip(playerId, Direction.random(), availableCoordinates, shipType)
         }
+
+        logger.info("Placed ${ships.size} ships for player $playerId.")
     }
 
+    @Retryable(ShipPlacementException::class)
     private fun placeShip(playerId: Int,
-                          shipDirection: ShipDirection,
+                          direction: Direction,
                           availableCoordinates: List<Coordinate>,
                           shipType: ShipType): Ship {
-        val coordinatesEligibleForIndexPosition = getEligibleCoordinates(availableCoordinates,
-                                                                         shipDirection,
-                                                                         shipType)
-        val finalShipComponentCoordinates = getShipComponentCoordinates(coordinatesEligibleForIndexPosition,
-                                                                        shipDirection,
-                                                                        shipType)
 
-        return playerShipDao.save(playerId, shipType.id).also { ship ->
-            playerShipComponentDao.save(ship.id, finalShipComponentCoordinates)
-        }
+        val coordinatesEligibleForIndexPosition = getCoordinatesEligibleForIndexPosition(availableCoordinates,
+                                                                                         direction,
+                                                                                         shipType)
+        val shipComponentCoordinateOptions = getShipComponentCoordinates(coordinatesEligibleForIndexPosition,
+                                                                         direction,
+                                                                         shipType)
+
+        val selectedComponents = shipComponentCoordinateOptions.first()
+        val ship = playerShipDao.save(playerId, shipType.id)
+        playerShipComponentDao.save(ship.id, selectedComponents)
+
+        return ship
     }
 
     private fun getShipComponentCoordinates(coordinates: List<Coordinate>,
-                                            direction: ShipDirection,
-                                            shipType: ShipType): List<Coordinate> {
+                                            direction: Direction,
+                                            shipType: ShipType): List<List<Coordinate>> {
 
-        val indexPosition = coordinates.random()
-        val filteredCoordinates = filterCoordinatesForIndex(coordinates,
-                                                            indexPosition,
-                                                            direction)
-        return getFinalShipCoordinates(filteredCoordinates,
-                                       indexPosition,
-                                       direction,
-                                       shipType)
+        return coordinates.shuffled().map { index ->
+            val filteredCoordinates = filterCoordinatesToFitWithIndex(coordinates, index, direction)
+            val componentCoordinates = getFinalShipCoordinates(filteredCoordinates, index, direction, shipType)
 
+            if (componentCoordinates.isNotEmpty()) componentCoordinates else emptyList()
+        }.filter {
+            it.size == shipType.size
+        }.ifEmpty {
+            throw ShipPlacementException("Unable to generate a list of coordinates for " +
+                                                 "$shipType heading $direction!")
+        }
     }
 
     /**
      * This filters a list of coordinates to match the direction & plane of an index coordinate.
      */
-    private fun filterCoordinatesForIndex(availableCoordinates: List<Coordinate>,
-                                          index: Coordinate,
-                                          shipDirection: ShipDirection): List<Coordinate> {
+    private fun filterCoordinatesToFitWithIndex(availableCoordinates: List<Coordinate>,
+                                                index: Coordinate,
+                                                direction: Direction): List<Coordinate> {
         return availableCoordinates.filter { coordinate ->
-            when (shipDirection.plane) {
+            when (direction.plane) {
                 VERTICAL -> index isHorizontallyAlignedWith coordinate
                 HORIZONTAL -> index isVerticallyAlignedWith coordinate
             }
         }.filter { coordinate ->
-            val coordinateHorizontalAsInt = COORDINATE_X_Y_MAPPING[coordinate.horizontal_position]!!
-            val indexHorizontalAsInt = COORDINATE_X_Y_MAPPING[index.horizontal_position]!!
-
-            when (shipDirection) {
+            when (direction) {
                 NORTH_SOUTH -> coordinate.vertical_position >= index.vertical_position
                 SOUTH_NORTH -> coordinate.vertical_position <= index.vertical_position
-                WEST_EAST -> coordinateHorizontalAsInt >= indexHorizontalAsInt
-                EAST_WEST -> coordinateHorizontalAsInt <= indexHorizontalAsInt
+                WEST_EAST -> X_Y_MAP[coordinate.horizontal_position]!! >= X_Y_MAP[index.horizontal_position]!!
+                EAST_WEST -> X_Y_MAP[coordinate.horizontal_position]!! <= X_Y_MAP[index.horizontal_position]!!
             }
         }
     }
 
     private fun getFinalShipCoordinates(filteredCoordinates: List<Coordinate>,
                                         index: Coordinate,
-                                        direction: ShipDirection,
+                                        direction: Direction,
                                         shipType: ShipType): List<Coordinate> {
 
         val componentCoordinates = filteredCoordinates
-                .sortedBy { it.vertical_position }
+                .sortedWith(coordinateComparator(direction))
                 .take(shipType.size)
 
-        val coordinatesHaveNoGaps = noGapsInCoordinates(componentCoordinates, index, direction, shipType)
+        val noGapsInCoordinates = noGapsInCoordinates(componentCoordinates, index, direction, shipType)
+        val sizeFitsShip = componentCoordinates.size == shipType.size
+        val requirements = listOf(noGapsInCoordinates, sizeFitsShip)
 
-        return if (coordinatesHaveNoGaps) {
+        return if (requirements.all { true }) {
             componentCoordinates
-        } else throw NoValidCoordinatesForShipPlacementException(index, shipType, direction, componentCoordinates)
+        } else emptyList()
+    }
+
+    private fun coordinateComparator(direction: Direction): Comparator<Coordinate> {
+        return Comparator { first, second ->
+            if (direction.plane == VERTICAL) {
+                when {
+                    first.vertical_position > second.vertical_position -> if (direction == NORTH_SOUTH) 1 else -1
+                    first.vertical_position < second.vertical_position -> if (direction == NORTH_SOUTH) -1 else 1
+                    else -> 0
+                }
+            } else {
+                when {
+                    first.horizontal_position > second.horizontal_position -> if (direction == WEST_EAST) 1 else -1
+                    first.horizontal_position > second.horizontal_position -> if (direction == WEST_EAST) -1 else 1
+                    else -> 0
+                }
+            }
+        }
     }
 
     private fun noGapsInCoordinates(coordinates: List<Coordinate>,
                                     index: Coordinate,
-                                    direction: ShipDirection,
+                                    direction: Direction,
                                     shipType: ShipType): Boolean {
+
         return coordinates.all { coordinate ->
             when (direction) {
                 NORTH_SOUTH -> coordinate.vertical_position in index.vertical_position..(index.vertical_position + shipType.size)
                 SOUTH_NORTH -> coordinate.vertical_position in index.vertical_position..(index.vertical_position - shipType.size)
                 EAST_WEST -> {
-                    val finalCoordinate = COORDINATE_X_Y_MAPPING[index.horizontal_position]!! - shipType.size
+                    val finalCoordinate = X_Y_MAP[index.horizontal_position]!! - shipType.size
 
-                    COORDINATE_X_Y_MAPPING[coordinate.horizontal_position] in COORDINATE_X_Y_MAPPING[index.horizontal_position]!!..finalCoordinate
+                    X_Y_MAP[coordinate.horizontal_position] in X_Y_MAP[index.horizontal_position]!!..finalCoordinate
                 }
                 WEST_EAST -> {
-                    val bound = COORDINATE_X_Y_MAPPING[index.horizontal_position]!! + shipType.size
+                    val bound = X_Y_MAP[index.horizontal_position]!! + shipType.size
 
-                    COORDINATE_X_Y_MAPPING[coordinate.horizontal_position] in COORDINATE_X_Y_MAPPING[index.horizontal_position]!!..bound
+                    X_Y_MAP[coordinate.horizontal_position] in X_Y_MAP[index.horizontal_position]!!..bound
                 }
             }
         }
@@ -151,55 +174,32 @@ class ShipPlacementService(private val logger: Logger,
      * picks a random column, then filters out coordinates that would be too close
      * to the edge for the current ship.
      */
-    private fun getEligibleCoordinates(availableCoordinates: List<Coordinate>,
-                                       shipDirection: ShipDirection,
-                                       shipType: ShipType): List<Coordinate> {
+    private fun getCoordinatesEligibleForIndexPosition(availableCoordinates: List<Coordinate>,
+                                                       direction: Direction,
+                                                       shipType: ShipType): List<Coordinate> {
 
-        return if (shipDirection.plane == VERTICAL) {
-            availableCoordinates.groupBy { coordinate ->
-                coordinate.horizontal_position
-            }.entries.random().value.filter { coordinate ->
-                when (shipDirection) {
-                    SOUTH_NORTH -> coordinate.vertical_position !in 1..shipType.size
-                    NORTH_SOUTH -> coordinate.vertical_position !in (MAX_BOARD_LENGTH - shipType.size..10)
-                    else -> throw InvalidGameStateException("Invalid ship direction. Direction should be either north to south or the opposite.")
-                }
-            }
-        } else {
-            availableCoordinates.groupBy { coordinate ->
-                coordinate.vertical_position
-            }.entries.random().value.filter { coordinate ->
-                when (shipDirection) {
-                    EAST_WEST -> COORDINATE_X_Y_MAPPING[coordinate.horizontal_position] !in (MAX_BOARD_LENGTH - shipType.size..10)
-                    WEST_EAST -> COORDINATE_X_Y_MAPPING[coordinate.horizontal_position] !in 1..shipType.size
-                    else -> throw InvalidGameStateException("Invalid ship direction. Direction should be either east to west or the opposite.")
-                }
+        val blacklist = if (direction == NORTH_SOUTH || direction == WEST_EAST) {
+            (MAX_BOARD_LENGTH - shipType.size + 1)..MAX_BOARD_LENGTH
+        } else 1..shipType.size
+
+        return availableCoordinates.filter { coordinate ->
+            when (direction.plane) {
+                VERTICAL -> coordinate.vertical_position !in blacklist
+                HORIZONTAL -> X_Y_MAP[coordinate.horizontal_position] !in blacklist
             }
         }
     }
-
-    private fun randomlyDecideShipDirection(): ShipDirection {
-        val plane = randomlyDecidePlane()
-        val i = Random.nextInt(0, 1)
-
-        return when (plane) {
-            VERTICAL -> if (i == 0) NORTH_SOUTH else SOUTH_NORTH
-            HORIZONTAL -> if (i == 0) WEST_EAST else EAST_WEST
-        }
-    }
-
-    private fun randomlyDecidePlane(): Plane = if (Random.nextInt(0, 1) == 0) VERTICAL else HORIZONTAL
 
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
         val allCoordinates = boardCoordinateDao.findAll()
-        val unavailableCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
+        val occupiedCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
             playerShipComponentDao.findAllComponents(ship.id).map { component ->
                 component.coordinate
             }
         }
 
         return allCoordinates.filter { coordinate ->
-            coordinate.id !in unavailableCoordinates.map { it.id }
+            coordinate.id !in occupiedCoordinates.map { it.id }
         }
     }
 }

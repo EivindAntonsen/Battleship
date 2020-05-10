@@ -5,6 +5,7 @@ import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
+import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -16,15 +17,14 @@ class GameInitializationService(private val logger: Logger,
                                 private val shipPlacementService: ShipPlacementService) : IGameInitializationService {
 
     override fun initializeNewGame(): Game {
-        logger.info("Initializing new game.")
-        val game = newGame()
+        return logger.log {
+            newGame().also {
+                newPlayer(it).run { shipPlacementService.placeShipsForPlayer(this.id) }
+                newPlayer(it).run { shipPlacementService.placeShipsForPlayer(this.id) }
+            }
 
-        repeat(2) {
-            shipPlacementService.placeShipsForPlayer(newPlayer(game).id)
         }
 
-        logger.info("Game (id=${game.id}) initialized and ships placed. Ready to start.")
-        return game
     }
 
     private fun newGame(): Game {

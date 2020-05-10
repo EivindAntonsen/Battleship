@@ -10,6 +10,9 @@ import org.springframework.boot.SpringBootConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.PropertySource
+import org.springframework.retry.backoff.FixedBackOffPolicy
+import org.springframework.retry.policy.SimpleRetryPolicy
+import org.springframework.retry.support.RetryTemplate
 import javax.sql.DataSource
 
 @SpringBootConfiguration
@@ -44,5 +47,18 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
             jdbcUrl = databaseProperties.url
             driverClassName = databaseProperties.driver
         })
+    }
+
+    @Bean
+    fun retryTemplate(): RetryTemplate {
+        return RetryTemplate().apply {
+            setBackOffPolicy(FixedBackOffPolicy().apply {
+                backOffPeriod = 0
+            })
+            setRetryPolicy(SimpleRetryPolicy().apply {
+                maxAttempts = 10
+            })
+            registerListener(SimpleRetryListener())
+        }
     }
 }
