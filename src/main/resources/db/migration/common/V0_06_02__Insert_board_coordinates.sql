@@ -1,4 +1,4 @@
-insert into battleship.board_coordinate (x_coordinate, y_coordinate)
+insert into battleship.coordinate (x_coordinate, y_coordinate)
 values ('a', 1),
        ('a', 2),
        ('a', 3),

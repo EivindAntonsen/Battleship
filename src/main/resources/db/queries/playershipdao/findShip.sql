@@ -3,7 +3,7 @@ select ps.id,
        ship_type_id,
        psc.id,
        player_ship_id,
-       board_coordinate_id,
+       coordinate_id,
        is_destroyed
 from battleship.player_ship ps
          join battleship.player_ship_component psc

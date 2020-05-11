@@ -5,7 +5,7 @@ import no.esa.battleship.enums.Plane.HORIZONTAL
 import no.esa.battleship.enums.Plane.VERTICAL
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
-import no.esa.battleship.repository.boardcoordinate.IBoardCoordinateDao
+import no.esa.battleship.repository.boardcoordinate.ICoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.service.domain.Coordinate
@@ -13,14 +13,13 @@ import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.slf4j.Logger
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 
 @Service
 class ShipPlacementService(private val logger: Logger,
                            private val playerShipDao: IPlayerShipDao,
                            private val playerShipComponentDao: IPlayerShipComponentDao,
-                           private val boardCoordinateDao: IBoardCoordinateDao) {
+                           private val coordinateDao: ICoordinateDao) {
 
     companion object {
         private const val MAX_BOARD_LENGTH = 10
@@ -125,7 +124,7 @@ class ShipPlacementService(private val logger: Logger,
     }
 
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
-        val allCoordinates = boardCoordinateDao.findAll()
+        val allCoordinates = coordinateDao.findAll()
         val occupiedCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
             playerShipComponentDao.findAllComponents(ship.id).map { component ->
                 component.coordinate

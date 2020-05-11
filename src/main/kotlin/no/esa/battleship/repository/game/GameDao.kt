@@ -1,7 +1,8 @@
 package no.esa.battleship.repository.game
 
-import QueryFileReader
+import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.exceptions.NoSuchGameException
+import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
@@ -27,17 +28,45 @@ class GameDao(private val logger: Logger,
     }
 
     override fun get(gameId: Int): Game {
-        val query = QueryFileReader.readSqlFile("game/findGame")
+        val query = QueryFileReader.readSqlFile(::get)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, gameId)
         }
 
         return logger.log("gameId", gameId) {
-            namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
-                val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
+            try {
+                namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                    val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
+                    val isConcluded = rs.getBoolean(IS_CONCLUDED)
 
-                Game(gameId, dateTime)
-            } ?: throw NoSuchGameException(gameId)
+                    Game(gameId, dateTime, isConcluded)
+                } ?: throw NoSuchGameException(gameId)
+            } catch (error: Exception) {
+                val message = "Failed to get game: ${error.message}."
+                logger.error(message)
+
+                throw DataAccessException("Failed to get game", this::class.java, error)
+            }
+        }
+    }
+
+    override fun isGameConcluded(gameId: Int): Boolean {
+        return get(gameId).isConcluded
+    }
+
+    @Synchronized
+    override fun update(game: Game): Int {
+        val statement = QueryFileReader.readSqlFile(::update)
+
+        return logger.log("gameId", game.id) {
+            try {
+                jdbcTemplate.update(statement)
+            } catch (error: Exception) {
+                val message = "Failed to update game: ${error.message}."
+                logger.error(message)
+
+                throw DataAccessException("Failed to update game", this::class.java, error)
+            }
         }
     }
 
@@ -55,7 +84,14 @@ class GameDao(private val logger: Logger,
         }
 
         return logger.log {
-            simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+            try {
+                simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+            } catch (error: Exception) {
+                val message = "Failed to save game: ${error.message}."
+                logger.error(message)
+
+                throw DataAccessException("Failed to save game", this::class.java, error)
+            }
         }
     }
 }

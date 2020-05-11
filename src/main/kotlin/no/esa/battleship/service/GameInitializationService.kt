@@ -34,7 +34,7 @@ class GameInitializationService(private val logger: Logger,
         val currentTime = LocalDateTime.now()
         val id = gameDao.save(currentTime)
 
-        return Game(id, currentTime)
+        return Game(id, currentTime, false)
     }
 
     private fun newPlayer(game: Game): Player {
