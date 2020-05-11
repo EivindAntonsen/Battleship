@@ -42,12 +42,7 @@ class PlayerStrategyDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                val message = "Could not save player strategy: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Could not save player strategy",
-                                          this::class.java,
-                                          error)
+                throw DataAccessException("Could not save player strategy", ::save, error)
             }
         }
     }
@@ -62,15 +57,12 @@ class PlayerStrategyDao(private val logger: Logger,
             try {
                 namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
                     Strategy.fromInt(rs.getInt(STRATEGY_ID))
-                } ?: throw NoSuchStrategyException(playerId)
+                }
             } catch (error: Exception) {
-                val message = "Could not get player strategy: ${error.message}."
-                logger.error(message)
-
                 throw DataAccessException("Could not get player strategy",
-                                          this::class.java,
+                                          ::find,
                                           error)
             }
-        }
+        } ?: throw NoSuchStrategyException(playerId)
     }
 }

@@ -42,10 +42,7 @@ class GameDao(private val logger: Logger,
                     Game(gameId, dateTime, isConcluded)
                 } ?: throw NoSuchGameException(gameId)
             } catch (error: Exception) {
-                val message = "Failed to get game: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Failed to get game", this::class.java, error)
+                throw DataAccessException("Failed to get game", ::get, error)
             }
         }
     }
@@ -62,10 +59,7 @@ class GameDao(private val logger: Logger,
             try {
                 jdbcTemplate.update(statement)
             } catch (error: Exception) {
-                val message = "Failed to update game: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Failed to update game", this::class.java, error)
+                throw DataAccessException("Failed to update game", ::update, error)
             }
         }
     }
@@ -87,10 +81,7 @@ class GameDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                val message = "Failed to save game: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Failed to save game", this::class.java, error)
+                throw DataAccessException("Failed to save game", ::save, error)
             }
         }
     }

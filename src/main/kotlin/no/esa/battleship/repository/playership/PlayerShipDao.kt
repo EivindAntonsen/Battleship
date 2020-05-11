@@ -42,10 +42,7 @@ class PlayerShipDao(private val logger: Logger,
                     ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
                 }
             } catch (error: Exception) {
-                val message = "Could not find ships for player $playerId: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Could not get ships for player", this::class.java, error)
+                throw DataAccessException("Could not get ships for player", ::findAllShipsForPlayer, error)
             }
         }
     }
@@ -65,10 +62,7 @@ class PlayerShipDao(private val logger: Logger,
                     ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
                 }
             } catch (error: Exception) {
-                val message = "Could not find ship $id: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Could not find ship", this::class.java, error)
+                throw DataAccessException("Could not find ship", ::find, error)
             } ?: throw NoSuchShipException(id)
         }
     }
@@ -89,10 +83,7 @@ class PlayerShipDao(private val logger: Logger,
             val shipId = try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                val message = "Could not save ship: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Could not save ship", this::class.java, error)
+                throw DataAccessException("Could not save ship", ::save, error)
             }
 
             ShipMapper.fromShipTypeIdWithParameters(shipId, playerId, shipTypeId)

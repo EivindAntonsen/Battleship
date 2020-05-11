@@ -33,10 +33,7 @@ class CoordinateDao(private val logger: Logger,
                                rs.getInt(Y_COORDINATE))
                 }
             } catch (error: Exception) {
-                val message = "Failed to execute statement to find all coordinates: ${error.message}."
-                logger.error(message)
-
-                throw DataAccessException("Could not get all coordinates", this::class.java, error)
+                throw DataAccessException("Could not get all coordinates", ::findAll, error)
             }
         }
     }

@@ -40,20 +40,3 @@ infix fun Coordinate.isHorizontallyAlignedWith(that: Coordinate): Boolean {
 infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
     return this.vertical_position == that.vertical_position
 }
-
-infix fun Coordinate.isAdjacentWith(that: Coordinate): Boolean {
-    return when {
-        this isHorizontallyAlignedWith that -> {
-            this.vertical_position - that.vertical_position in listOf(-1, 0, 1)
-
-        }
-        this isVerticallyAlignedWith that -> {
-            this.horizontal_position - that.horizontal_position in listOf(-1, 0, 1)
-        }
-        else -> false
-    }
-}
-
-fun classAndFunctionName(kClass: KClass<*>): Pair<String, String> {
-    return kClass.java.enclosingClass.simpleName to kClass.java.enclosingMethod.name
-}

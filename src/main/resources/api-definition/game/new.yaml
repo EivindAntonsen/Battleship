@@ -7,6 +7,6 @@ post:
     200:
       description: The ID of the game
       content:
-        application/json:
+        text/plain:
           schema:
             type: string
