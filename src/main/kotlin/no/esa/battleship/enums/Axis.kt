@@ -1,11 +1,11 @@
 package no.esa.battleship.enums
 
-enum class Plane {
+enum class Axis {
     VERTICAL,
     HORIZONTAL;
 
     companion object {
-        fun random(): Plane {
+        fun random(): Axis {
             return values().random()
         }
     }

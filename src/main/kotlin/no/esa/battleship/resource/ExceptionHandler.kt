@@ -1,15 +1,18 @@
 package no.esa.battleship.resource
 
 import no.esa.battleship.repository.exceptions.DataAccessException
-import org.slf4j.LoggerFactory
-import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.*
+import no.esa.battleship.utils.toCamelCase
+import org.slf4j.Logger
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import java.util.*
 
 @ControllerAdvice
-class ExceptionHandler {
+class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: ResourceBundle,
+                       private val logger: Logger) {
 
     /**
      * All instances of this exception are thrown from data access objects,
@@ -20,11 +23,12 @@ class ExceptionHandler {
      */
     @ExceptionHandler(DataAccessException::class)
     fun handle(exception: DataAccessException): ResponseEntity<String> {
-        val className = exception.function.javaClass.enclosingClass.simpleName
-        val logger = LoggerFactory.getLogger(className)
+        println("I should handle it.")
+        val callingClass = exception.callingFunction.javaClass.enclosingClass.simpleName.toCamelCase()
+        val callingFunction = exception.callingFunction.javaClass.enclosingMethod.name
 
+        val displayedErrorMessage = resourceBundle.getString("dataAccessException.$callingClass.$callingFunction")
         val loggedErrorMessage = exception.cause?.message ?: exception.message
-        val displayedErrorMessage = exception.message
 
         logger.error(loggedErrorMessage)
 

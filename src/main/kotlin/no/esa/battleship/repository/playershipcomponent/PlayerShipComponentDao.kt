@@ -47,9 +47,7 @@ class PlayerShipComponentDao(private val logger: Logger,
                 val componentId = try {
                     simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
                 } catch (error: Exception) {
-                    throw DataAccessException("Failed to save player ship component",
-                                              ::save,
-                                              error)
+                    throw DataAccessException(::save, error)
                 }
 
                 ShipComponent(componentId, playerShipId, coordinate, false)
@@ -76,7 +74,7 @@ class PlayerShipComponentDao(private val logger: Logger,
                                   rs.getBoolean(IS_DESTROYED))
                 }
             } catch (error: Exception) {
-                throw DataAccessException("Could not find ship components", ::findAllComponents, error)
+                throw DataAccessException(::findAllComponents, error)
             }
         }
     }
@@ -92,7 +90,7 @@ class PlayerShipComponentDao(private val logger: Logger,
             try {
                 namedTemplate.update(query, parameterSource)
             } catch (error: Exception) {
-                throw DataAccessException("Could not update ship components", ::update, error)
+                throw DataAccessException(::update, error)
             }
         }
     }

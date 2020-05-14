@@ -10,6 +10,7 @@ import org.springframework.boot.SpringBootConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.PropertySource
+import org.springframework.core.env.Environment
 import org.springframework.retry.backoff.FixedBackOffPolicy
 import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
@@ -18,7 +19,8 @@ import javax.sql.DataSource
 @SpringBootConfiguration
 @ComponentScan
 @PropertySource("file:C:/Esa/Utvikling/env.properties")
-class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
+class ApplicationConfig(private val databaseProperties: DatabaseProperties,
+                        private val environment: Environment) {
 
     @Bean
     fun produceLogger(injectionPoint: InjectionPoint): Logger {
@@ -27,16 +29,19 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
 
     @Bean
     fun flyway(): Flyway {
-        return Flyway.configure()
+        val flyway = Flyway.configure()
                 .dataSource(dataSource())
                 .schemas("battleship")
                 .locations("classpath:db/migration/common", "classpath:db/migration/deploy")
                 .outOfOrder(true)
                 .table("schema_version")
-                .load().also {
-                    it.clean()
-                    it.migrate()
-                }
+                .load()
+
+        if (environment.activeProfiles.contains("dev")) flyway.clean()
+
+        flyway.migrate()
+
+        return flyway
     }
 
     @Bean

@@ -1,7 +1,7 @@
 package no.esa.battleship.repository.game
 
-import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.exceptions.NoSuchGameException
+import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.utils.log
@@ -42,7 +42,7 @@ class GameDao(private val logger: Logger,
                     Game(gameId, dateTime, isConcluded)
                 } ?: throw NoSuchGameException(gameId)
             } catch (error: Exception) {
-                throw DataAccessException("Failed to get game", ::get, error)
+                throw DataAccessException(::get, error)
             }
         }
     }
@@ -59,7 +59,7 @@ class GameDao(private val logger: Logger,
             try {
                 jdbcTemplate.update(statement)
             } catch (error: Exception) {
-                throw DataAccessException("Failed to update game", ::update, error)
+                throw DataAccessException(::update, error)
             }
         }
     }
@@ -81,7 +81,7 @@ class GameDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException("Failed to save game", ::save, error)
+                throw DataAccessException(::save, error)
             }
         }
     }

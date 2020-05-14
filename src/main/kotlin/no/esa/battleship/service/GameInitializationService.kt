@@ -1,21 +1,26 @@
 package no.esa.battleship.service
 
-import no.esa.battleship.exceptions.GameInitialization
-import no.esa.battleship.exceptions.GameInitialization.*
+import no.esa.battleship.exceptions.GameInitialization.TooManyPlayersException
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.utils.log
+import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
+import org.springframework.util.StringUtils
 import java.time.LocalDateTime
+import java.util.*
 
 @Service
 class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
-                                private val shipPlacementService: ShipPlacementService) : IGameInitializationService {
+                                private val shipPlacementService: ShipPlacementService,
+                                @Qualifier("errorMessages") private val resourceBundle: ResourceBundle)
+    : IGameInitializationService {
 
     override fun initializeNewGame(): Game {
         return logger.log {

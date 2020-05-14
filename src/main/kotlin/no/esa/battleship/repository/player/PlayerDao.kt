@@ -40,11 +40,14 @@ class PlayerDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException("Could not save player", ::save, error)
+                throw DataAccessException(::save, error)
             }
         }
     }
 
+    /**
+     * Return first player as component1 and second player as component2.
+     */
     override fun findPlayersInGame(gameId: Int): List<Player> {
         val query = QueryFileReader.readSqlFile(::findPlayersInGame)
         val parameterSource = MapSqlParameterSource().apply {
@@ -58,7 +61,7 @@ class PlayerDao(private val logger: Logger,
                            rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {
-                throw DataAccessException("Could not find players in game", ::findPlayersInGame, error)
+                throw DataAccessException(::findPlayersInGame, error)
             }
         }
     }

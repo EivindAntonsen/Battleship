@@ -15,7 +15,7 @@ class CoordinateDao(private val logger: Logger,
 
     companion object {
         const val SCHEMA_NAME = "battleship"
-        const val TABLE_NAME = "board_coordinate"
+        const val TABLE_NAME = "coordinate"
         const val PRIMARY_KEY = "id"
         const val X_COORDINATE = "x_coordinate"
         const val Y_COORDINATE = "y_coordinate"
@@ -33,7 +33,7 @@ class CoordinateDao(private val logger: Logger,
                                rs.getInt(Y_COORDINATE))
                 }
             } catch (error: Exception) {
-                throw DataAccessException("Could not get all coordinates", ::findAll, error)
+                throw DataAccessException(::findAll, error)
             }
         }
     }
