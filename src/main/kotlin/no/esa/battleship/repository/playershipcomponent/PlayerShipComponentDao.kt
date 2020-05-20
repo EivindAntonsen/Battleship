@@ -79,8 +79,11 @@ class PlayerShipComponentDao(private val logger: Logger,
         }
     }
 
-    override fun findRemainingShipComponents(): List<ShipComponent> {
+    override fun findRemainingShipComponents(gameId: Int): List<ShipComponent> {
         val query = QueryFileReader.readSqlFile(this::class, ::findRemainingShipComponents)
+        MapSqlParameterSource().apply {
+            addValue("game_id", gameId)
+        }
 
         return logger.log {
             try {

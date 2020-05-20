@@ -1,4 +1,4 @@
-package no.esa.battleship.service
+package no.esa.battleship.service.initialization
 
 import no.esa.battleship.service.domain.Game
 

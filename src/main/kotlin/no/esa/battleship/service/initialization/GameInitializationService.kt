@@ -1,4 +1,4 @@
-package no.esa.battleship.service
+package no.esa.battleship.service.initialization
 
 import no.esa.battleship.enums.Strategy
 import no.esa.battleship.exceptions.GameInitialization.TooManyPlayersException
@@ -7,20 +7,18 @@ import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
+import no.esa.battleship.service.shipplacement.IShipPlacementService
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.util.*
 
 @Service
 class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
-                                private val shipPlacementService: ShipPlacementService,
-                                private val playerStrategyDao: IPlayerStrategyDao,
-                                @Qualifier("errorMessages") private val resourceBundle: ResourceBundle)
+                                private val shipPlacementService: IShipPlacementService,
+                                private val playerStrategyDao: IPlayerStrategyDao)
     : IGameInitializationService {
 
     override fun initializeNewGame(): Game {

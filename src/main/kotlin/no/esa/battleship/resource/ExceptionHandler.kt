@@ -1,5 +1,6 @@
 package no.esa.battleship.resource
 
+import no.esa.battleship.exceptions.GameInitialization
 import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.toCamelCase
@@ -46,6 +47,15 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(InvalidGameStateException::class)
     fun handle(exception: InvalidGameStateException): ResponseEntity<String> {
+        logger.warn(exception.message)
+
+        return ResponseEntity
+                .status(INTERNAL_SERVER_ERROR)
+                .body(exception.message)
+    }
+
+    @ExceptionHandler(GameInitialization::class)
+    fun handle(exception: GameInitialization): ResponseEntity<String> {
         logger.warn(exception.message)
 
         return ResponseEntity

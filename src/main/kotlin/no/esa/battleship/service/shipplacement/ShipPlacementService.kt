@@ -1,4 +1,4 @@
-package no.esa.battleship.service
+package no.esa.battleship.service.shipplacement
 
 import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service
 class ShipPlacementService(private val logger: Logger,
                            private val playerShipDao: IPlayerShipDao,
                            private val playerShipComponentDao: IPlayerShipComponentDao,
-                           private val coordinateDao: ICoordinateDao) {
+                           private val coordinateDao: ICoordinateDao): IShipPlacementService {
 
     companion object {
         private const val MAX_BOARD_LENGTH = 10
@@ -36,7 +36,7 @@ class ShipPlacementService(private val logger: Logger,
                 'j' to 10)
     }
 
-    fun placeShipsForPlayer(playerId: Int) {
+    override fun placeShipsForPlayer(playerId: Int) {
         val ships = ShipType.values().map { shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
 
@@ -89,8 +89,6 @@ class ShipPlacementService(private val logger: Logger,
                             && X_Y_MAP[coordinate.horizontal_position]!! in allowedRange
                 }
             }.ifEmpty {
-                logger.error("Found no suitable coordinates for ship $shipType $axis from ${availableCoordinates.size} options.")
-
                 throw ShipPlacementException("Unable to generate a list of coordinates on a $axis plane for $shipType!")
             }.takeIf {
                 it.size == shipType.size
