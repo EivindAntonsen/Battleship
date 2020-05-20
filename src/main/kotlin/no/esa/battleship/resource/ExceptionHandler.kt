@@ -1,5 +1,6 @@
 package no.esa.battleship.resource
 
+import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
@@ -25,16 +26,36 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
     fun handle(exception: DataAccessException): ResponseEntity<String> {
         val callingClass = exception.callingClass.simpleName?.toCamelCase()
         val callingFunction = exception.callingFunction.name
-        val displayedErrorMessage = resourceBundle.getString("dataAccessException.$callingClass.$callingFunction")
-        val loggedErrorMessage = exception.cause?.message ?: exception.message
 
-        logger.error(loggedErrorMessage)
+        logger.error(exception.cause?.message ?: exception.message ?: exception.toString())
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
-                .body(displayedErrorMessage)
+                .body(resourceBundle.getString("dataAccessException.$callingClass.$callingFunction"))
     }
 
+    /**
+     * These errors occur when the state of the game is invalid.
+     *
+     * Examples (more may exist):
+     *   1. Games with more than 2 players.
+     *   2. Players with more than 5 ships.
+     *   3. Player ships that overlap.
+     *   4. Ships with more than 5 components.
+     *   5. Games that haven't concluded after 100 turns etc (only 100 tiles in game board).
+     */
+    @ExceptionHandler(InvalidGameStateException::class)
+    fun handle(exception: InvalidGameStateException): ResponseEntity<String> {
+        logger.warn(exception.message)
+
+        return ResponseEntity
+                .status(INTERNAL_SERVER_ERROR)
+                .body(exception.message)
+    }
+
+    /**
+     * Any other exception not covered by the above.
+     */
     @ExceptionHandler(Exception::class)
     fun handle(exception: Throwable): ResponseEntity<String> {
         logger.warn(exception.message)

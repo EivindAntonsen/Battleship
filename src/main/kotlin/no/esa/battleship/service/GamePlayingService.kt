@@ -1,15 +1,12 @@
 package no.esa.battleship.service
 
-import no.esa.battleship.enums.Strategy
 import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.repository.boardcoordinate.ICoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
-import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
-import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.domain.ShipComponent
 import org.slf4j.Logger
@@ -26,21 +23,17 @@ class GamePlayingService(private val logger: Logger,
                          private val gameDao: IGameDao,
                          private val playerShipDao: IPlayerShipDao,
                          private val playerShipComponentDao: IPlayerShipComponentDao,
-                         private val playerStrategyDao: IPlayerStrategyDao,
                          private val playerTurnDao: IPlayerTurnDao) {
 
     fun playGame(gameId: Int): Player? {
         val (player1, player2) = getPlayersInGame(gameId)
-        val player1Strategy = playerStrategyDao.find(player1.id)
-        val player2Strategy = playerStrategyDao.find(player2.id)
-
-        var counter = 1
+        var gameTurnId = 1
 
         do {
-            executeGameTurn(player1, player1Strategy, player2, counter)
-            executeGameTurn(player2, player2Strategy, player1, counter)
+            executeGameTurn(player1, player2, gameTurnId)
+            executeGameTurn(player2, player1, gameTurnId)
 
-            counter++
+            gameTurnId++
         } while (!gameDao.isGameConcluded(gameId))
 
         val remainingPlayers = playerShipComponentDao.findRemainingShipComponents().map {
@@ -56,48 +49,43 @@ class GamePlayingService(private val logger: Logger,
         }
     }
 
-    fun executeGameTurn(currentPlayer: Player,
-                        currentStrategy: Strategy,
-                        targetPlayer: Player,
-                        gameTurn: Int) {
+    private fun executeGameTurn(currentPlayer: Player,
+                                targetPlayer: Player,
+                                gameTurn: Int) {
 
         if (isPlayerFleetAlive(currentPlayer.id)) {
-            if (gameTurn > 1200) throw InvalidGameStateException("Game should have been concluded by now!")
+            if (gameTurn > 100) throw InvalidGameStateException("Game should have been concluded by now!")
 
             val availableCoordinates = getAvailableCoordinatesForPlayer(currentPlayer.id)
-            val targetCoordinate = availableCoordinates.random()
-            val targetPlayerShipComponents = getShipComponentsForPlayer(targetPlayer.id)
+            val targetCoordinateId = availableCoordinates.random()
 
-            val isHit = targetPlayerShipComponents.any { shipComponent ->
-                shipComponent.coordinate.id == targetCoordinate.id
-            }
+            getShipComponentsForPlayer(targetPlayer.id).firstOrNull { component ->
+                component.coordinate.id == targetCoordinateId
+            }.let { shipComponent ->
+                if (shipComponent != null) {
+                    logger.info("Coordinate $targetCoordinateId is a hit!")
 
-            if (isHit) {
-                logger.info("Coordinate $targetCoordinate is a hit!")
-
-                val shipComponentToUpdateAsDestroyed = targetPlayerShipComponents.first {
-                    it.coordinate.id == targetCoordinate.id
+                    playerShipComponentDao.update(shipComponent.id, true)
                 }
 
-                playerShipComponentDao.update(shipComponentToUpdateAsDestroyed.id, true)
+                playerTurnDao.save(currentPlayer.id,
+                                   targetCoordinateId,
+                                   shipComponent != null,
+                                   gameTurn)
             }
 
-            playerTurnDao.save(currentPlayer.id, targetCoordinate.id, isHit, gameTurn)
         } else gameDao.conclude(currentPlayer.gameId)
     }
 
-    private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
+    private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Int> {
         val unavailableCoordinateIds = playerTurnDao.getPreviousTurnsForPlayer(playerId).map { turn ->
-            turn.coordinate
+            turn.coordinate.id
         }
 
-        val availableCoordinates = coordinateDao.findAll().filter { coordinate ->
-            coordinate !in unavailableCoordinateIds
-        }
-
-        return if (availableCoordinates.isNotEmpty()) {
-            availableCoordinates
-        } else throw InvalidGameStateException("No valid coordinates left for player $playerId!")
+        return coordinateDao.findAll()
+                .map { it.id }
+                .filterNot { it in unavailableCoordinateIds }
+                .ifEmpty { throw InvalidGameStateException("No valid coordinates left for player $playerId!") }
     }
 
     private fun isPlayerFleetAlive(playerId: Int): Boolean {
