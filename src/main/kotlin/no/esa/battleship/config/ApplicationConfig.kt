@@ -55,19 +55,6 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties,
         })
     }
 
-    @Bean
-    fun retryTemplate(): RetryTemplate {
-        return RetryTemplate().apply {
-            setBackOffPolicy(FixedBackOffPolicy().apply {
-                backOffPeriod = 0
-            })
-            setRetryPolicy(SimpleRetryPolicy().apply {
-                maxAttempts = 10
-            })
-            registerListener(SimpleRetryListener())
-        }
-    }
-
     @Bean("errorMessages")
     fun resourceBundle(): ResourceBundle {
         return ResourceBundle.getBundle("messages", Locale.ENGLISH)
