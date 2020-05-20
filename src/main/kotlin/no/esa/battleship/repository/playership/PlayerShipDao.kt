@@ -1,12 +1,14 @@
 package no.esa.battleship.repository.playership
 
-import no.esa.battleship.repository.QueryFileReader
+import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.exceptions.NoSuchShipException
+import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.ShipMapper
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
+import org.springframework.dao.IncorrectResultSizeDataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -25,10 +27,11 @@ class PlayerShipDao(private val logger: Logger,
         const val PRIMARY_KEY = "id"
         const val PLAYER_ID = "player_id"
         const val SHIP_TYPE_ID = "ship_type_id"
+        const val IS_FINISHED = "is_finished"
     }
 
     override fun findAllShipsForPlayer(playerId: Int): List<Ship> {
-        val query = QueryFileReader.readSqlFile(::findAllShipsForPlayer)
+        val query = QueryFileReader.readSqlFile(this::class, ::findAllShipsForPlayer)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
@@ -42,13 +45,13 @@ class PlayerShipDao(private val logger: Logger,
                     ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::findAllShipsForPlayer, error)
+                throw DataAccessException(this::class, ::findAllShipsForPlayer, error)
             }
         }
     }
 
     override fun find(id: Int): Ship {
-        val query = QueryFileReader.readSqlFile(::find)
+        val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, id)
         }
@@ -62,9 +65,9 @@ class PlayerShipDao(private val logger: Logger,
                     ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::find, error)
-            } ?: throw NoSuchShipException(id)
-        }
+                throw DataAccessException(this::class, ::find, error)
+            }
+        } ?: throw NoSuchShipException(id)
     }
 
     @Synchronized
@@ -83,7 +86,7 @@ class PlayerShipDao(private val logger: Logger,
             val shipId = try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException(::save, error)
+                throw DataAccessException(this::class, ::save, error)
             }
 
             ShipMapper.fromShipTypeIdWithParameters(shipId, playerId, shipTypeId)

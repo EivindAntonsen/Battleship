@@ -6,4 +6,5 @@ interface IPlayerDao {
 
     fun save(gameId: Int): Int
     fun findPlayersInGame(gameId: Int): List<Player>
+    fun find(playerId: Int): Player
 }

@@ -47,7 +47,7 @@ class PlayerShipComponentDao(private val logger: Logger,
                 val componentId = try {
                     simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
                 } catch (error: Exception) {
-                    throw DataAccessException(::save, error)
+                    throw DataAccessException(this::class, ::save, error)
                 }
 
                 ShipComponent(componentId, playerShipId, coordinate, false)
@@ -56,7 +56,7 @@ class PlayerShipComponentDao(private val logger: Logger,
     }
 
     override fun findAllComponents(playerShipId: Int): List<ShipComponent> {
-        val query = QueryFileReader.readSqlFile(::findAllComponents)
+        val query = QueryFileReader.readSqlFile(this::class, ::findAllComponents)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_SHIP_ID, playerShipId)
         }
@@ -74,14 +74,35 @@ class PlayerShipComponentDao(private val logger: Logger,
                                   rs.getBoolean(IS_DESTROYED))
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::findAllComponents, error)
+                throw DataAccessException(this::class, ::findAllComponents, error)
+            }
+        }
+    }
+
+    override fun findRemainingShipComponents(): List<ShipComponent> {
+        val query = QueryFileReader.readSqlFile(this::class, ::findRemainingShipComponents)
+
+        return logger.log {
+            try {
+                jdbcTemplate.query(query) { rs, _ ->
+                    val coordinateId = rs.getInt(COORDINATE_ID)
+                    val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
+                    val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
+
+                    ShipComponent(rs.getInt(PRIMARY_KEY),
+                                  rs.getInt(PLAYER_SHIP_ID),
+                                  Coordinate(coordinateId, xCoordinate, yCoordinate),
+                                  rs.getBoolean(IS_DESTROYED))
+                }
+            } catch (error: Exception) {
+                throw DataAccessException(this::class, ::findRemainingShipComponents, error)
             }
         }
     }
 
     @Synchronized
     override fun update(playerShipComponentId: Int, isDestroyed: Boolean): Int {
-        val query = QueryFileReader.readSqlFile(::update)
+        val query = QueryFileReader.readSqlFile(this::class, ::update)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, playerShipComponentId)
         }
@@ -90,7 +111,7 @@ class PlayerShipComponentDao(private val logger: Logger,
             try {
                 namedTemplate.update(query, parameterSource)
             } catch (error: Exception) {
-                throw DataAccessException(::update, error)
+                throw DataAccessException(this::class, ::update, error)
             }
         }
     }

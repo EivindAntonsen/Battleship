@@ -1,0 +1,25 @@
+post:
+  summary: Plays a game
+  operationId: playGame
+  tags:
+    - game
+  parameters:
+    - name: gameId
+      in: query
+      description: The id of the game to play
+      required: true
+      schema:
+        type: integer
+        format: int32
+  responses:
+    200:
+      content:
+        application/json:
+          schema:
+            type: string
+    500:
+      description: error payload
+      content:
+        text/plain:
+          schema:
+            type: string

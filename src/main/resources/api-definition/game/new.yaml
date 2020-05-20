@@ -7,6 +7,13 @@ post:
     200:
       description: The ID of the game
       content:
-        text/plain:
+        application/json:
           schema:
-            type: string
+            type: integer
+            format: int32
+    500:
+      description: error payload
+      content:
+        application/json:
+          schema:
+            $ref: "./common/commonDefinition.yaml#/components/schemas/Error"

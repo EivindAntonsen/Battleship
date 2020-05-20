@@ -28,7 +28,7 @@ class GameDao(private val logger: Logger,
     }
 
     override fun get(gameId: Int): Game {
-        val query = QueryFileReader.readSqlFile(::get)
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, gameId)
         }
@@ -40,26 +40,27 @@ class GameDao(private val logger: Logger,
                     val isConcluded = rs.getBoolean(IS_CONCLUDED)
 
                     Game(gameId, dateTime, isConcluded)
-                } ?: throw NoSuchGameException(gameId)
+                }
             } catch (error: Exception) {
-                throw DataAccessException(::get, error)
+                throw DataAccessException(this::class, ::get, error)
             }
-        }
+        } ?: throw NoSuchGameException(gameId)
     }
 
-    override fun isGameConcluded(gameId: Int): Boolean {
-        return get(gameId).isConcluded
-    }
+    override fun isGameConcluded(gameId: Int): Boolean = get(gameId).isConcluded
 
     @Synchronized
-    override fun update(game: Game): Int {
-        val statement = QueryFileReader.readSqlFile(::update)
+    override fun conclude(gameId: Int): Int {
+        val statement = QueryFileReader.readSqlFile(this::class, ::conclude)
+        val parameterSource = MapSqlParameterSource().apply {
+            addValue(PRIMARY_KEY, gameId)
+        }
 
-        return logger.log("gameId", game.id) {
+        return logger.log(PRIMARY_KEY, gameId) {
             try {
-                jdbcTemplate.update(statement)
+                namedTemplate.update(statement, parameterSource)
             } catch (error: Exception) {
-                throw DataAccessException(::update, error)
+                throw DataAccessException(this::class, ::conclude, error)
             }
         }
     }
@@ -81,7 +82,7 @@ class GameDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException(::save, error)
+                throw DataAccessException(this::class, ::save, error)
             }
         }
     }

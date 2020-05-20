@@ -23,10 +23,8 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(DataAccessException::class)
     fun handle(exception: DataAccessException): ResponseEntity<String> {
-        println("I should handle it.")
-        val callingClass = exception.callingFunction.javaClass.enclosingClass.simpleName.toCamelCase()
-        val callingFunction = exception.callingFunction.javaClass.enclosingMethod.name
-
+        val callingClass = exception.callingClass.simpleName?.toCamelCase()
+        val callingFunction = exception.callingFunction.name
         val displayedErrorMessage = resourceBundle.getString("dataAccessException.$callingClass.$callingFunction")
         val loggedErrorMessage = exception.cause?.message ?: exception.message
 
@@ -35,5 +33,14 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
                 .body(displayedErrorMessage)
+    }
+
+    @ExceptionHandler(Exception::class)
+    fun handle(exception: Throwable): ResponseEntity<String> {
+        logger.warn(exception.message)
+
+        return ResponseEntity
+                .status(INTERNAL_SERVER_ERROR)
+                .body("Something went wrong, see server logs for cause.")
     }
 }

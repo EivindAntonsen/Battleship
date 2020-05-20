@@ -3,5 +3,7 @@ info:
   version: 1.0.0
   title: Battleship
 paths:
-  /game:
+  /game/new:
     $ref: "./game/new.yaml"
+  /game/play:
+    $ref: "./game/play.yaml"

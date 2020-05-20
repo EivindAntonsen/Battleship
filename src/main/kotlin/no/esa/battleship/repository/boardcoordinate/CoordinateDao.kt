@@ -23,7 +23,7 @@ class CoordinateDao(private val logger: Logger,
 
     @Cacheable("boardCoordinates")
     override fun findAll(): List<Coordinate> {
-        val query = QueryFileReader.readSqlFile(::findAll)
+        val query = QueryFileReader.readSqlFile(this::class, ::findAll)
 
         return logger.log {
             try {
@@ -33,7 +33,7 @@ class CoordinateDao(private val logger: Logger,
                                rs.getInt(Y_COORDINATE))
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::findAll, error)
+                throw DataAccessException(this::class, ::findAll, error)
             }
         }
     }

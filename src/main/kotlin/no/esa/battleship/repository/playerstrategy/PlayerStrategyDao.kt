@@ -42,13 +42,13 @@ class PlayerStrategyDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException(::save, error)
+                throw DataAccessException(this::class, ::save, error)
             }
         }
     }
 
     override fun find(playerId: Int): Strategy {
-        val query = QueryFileReader.readSqlFile(::find)
+        val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
@@ -59,7 +59,7 @@ class PlayerStrategyDao(private val logger: Logger,
                     Strategy.fromInt(rs.getInt(STRATEGY_ID))
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::find, error)
+                throw DataAccessException(this::class, ::find, error)
             }
         } ?: throw NoSuchStrategyException(playerId)
     }

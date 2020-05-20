@@ -18,6 +18,9 @@ enum class Strategy(val id: Int) {
     MIMIC(3);
 
     companion object {
+
+        fun random(): Strategy = values().random()
+
         fun fromInt(id: Int): Strategy? {
             return values().firstOrNull {
                 it.id == id

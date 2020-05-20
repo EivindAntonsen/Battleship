@@ -40,16 +40,31 @@ class PlayerDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException(::save, error)
+                throw DataAccessException(this::class, ::save, error)
             }
         }
     }
 
-    /**
-     * Return first player as component1 and second player as component2.
-     */
+    override fun find(playerId: Int): Player {
+        val query = QueryFileReader.readSqlFile(this::class, ::find)
+        val parameterSource = MapSqlParameterSource().apply {
+            addValue(PRIMARY_KEY, playerId)
+        }
+
+        return logger.log("playerId", playerId) {
+            try {
+                namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                    Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
+                }
+            } catch (error: Exception) {
+                throw DataAccessException(this::class, ::find, error)
+            }
+        }
+
+    }
+
     override fun findPlayersInGame(gameId: Int): List<Player> {
-        val query = QueryFileReader.readSqlFile(::findPlayersInGame)
+        val query = QueryFileReader.readSqlFile(this::class, ::findPlayersInGame)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }
@@ -57,11 +72,10 @@ class PlayerDao(private val logger: Logger,
         return logger.log("gameId", gameId) {
             try {
                 namedTemplate.query(query, parameterSource) { rs, _ ->
-                    Player(rs.getInt(PRIMARY_KEY),
-                           rs.getInt(GAME_ID))
+                    Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::findPlayersInGame, error)
+                throw DataAccessException(this::class, ::findPlayersInGame, error)
             }
         }
     }

@@ -32,7 +32,8 @@ class PlayerTurnDao(private val logger: Logger,
     @Synchronized
     override fun save(playerId: Int,
                       coordinateId: Int,
-                      isHit: Boolean): Int {
+                      isHit: Boolean,
+                      gameTurn: Int): Int {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
@@ -42,6 +43,7 @@ class PlayerTurnDao(private val logger: Logger,
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
             addValue(COORDINATE_ID, coordinateId)
+            addValue(GAME_TURN, gameTurn)
             addValue(IS_HIT, isHit)
         }
 
@@ -49,13 +51,13 @@ class PlayerTurnDao(private val logger: Logger,
             try {
                 simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
             } catch (error: Exception) {
-                throw DataAccessException(::save, error)
+                throw DataAccessException(this::class, ::save, error)
             }
         }
     }
 
     override fun getPreviousTurnsForPlayer(playerId: Int): List<PlayerTurn> {
-        val query = QueryFileReader.readSqlFile(::getPreviousTurnsForPlayer)
+        val query = QueryFileReader.readSqlFile(this::class, ::getPreviousTurnsForPlayer)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
@@ -74,7 +76,7 @@ class PlayerTurnDao(private val logger: Logger,
                                rs.getBoolean(IS_HIT))
                 }
             } catch (error: Exception) {
-                throw DataAccessException(::getPreviousTurnsForPlayer, error)
+                throw DataAccessException(this::class, ::getPreviousTurnsForPlayer, error)
             }
         }.sortedBy { it.gameTurn }
     }

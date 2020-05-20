@@ -14,6 +14,7 @@ import org.springframework.core.env.Environment
 import org.springframework.retry.backoff.FixedBackOffPolicy
 import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
+import java.util.*
 import javax.sql.DataSource
 
 @SpringBootConfiguration
@@ -65,5 +66,10 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties,
             })
             registerListener(SimpleRetryListener())
         }
+    }
+
+    @Bean("errorMessages")
+    fun resourceBundle(): ResourceBundle {
+        return ResourceBundle.getBundle("messages", Locale.ENGLISH)
     }
 }

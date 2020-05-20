@@ -1,3 +1,3 @@
 update battleship.game
 set is_concluded = true
-where id = :id;
+where id = :id

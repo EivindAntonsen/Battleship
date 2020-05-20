@@ -1,11 +1,4 @@
-select ps.id,
+select id,
        player_id,
-       ship_type_id,
-       psc.id,
-       player_ship_id,
-       coordinate_id,
-       is_destroyed
-from battleship.player_ship ps
-         join battleship.player_ship_component psc
-              on ps.id = psc.player_ship_id
-                  and ps.id = :id;
+       ship_type_id
+from battleship.player_ship where id = :id;
