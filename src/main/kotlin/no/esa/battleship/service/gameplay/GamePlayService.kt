@@ -45,7 +45,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
     }
 
     private fun findRemainingPlayers(gameId: Int): List<Player> {
-        return playerShipComponentDao.findRemainingShipComponents(gameId).map { shipComponent ->
+        return playerShipComponentDao.findByGameId(gameId).map { shipComponent ->
             val ship = playerShipDao.find(shipComponent.playerShipId)
 
             playerDao.find(ship.playerId)
@@ -57,7 +57,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                                 gameTurn: Int) {
 
         if (playerFleetIsAlive(currentPlayer.id)) {
-            if (gameTurn > 100) throw InvalidGameStateException("Game should have been concluded by now!")
+            if (gameTurn > 1000) throw InvalidGameStateException("Game should have been concluded by now!")
 
             val availableCoordinates = getAvailableCoordinatesForPlayer(currentPlayer.id)
             val targetCoordinateId = availableCoordinates.random()
@@ -79,9 +79,9 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
     }
 
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Int> {
-        val unavailableCoordinateIds = playerTurnDao.getPreviousTurnsForPlayer(playerId).map { turn ->
-            turn.coordinate.id
-        }
+        val unavailableCoordinateIds = playerTurnDao.getPreviousTurnsForPlayer(playerId)
+                .map { it.coordinate.id }
+                .distinct()
 
         return coordinateDao.findAll().map { coordinate ->
             coordinate.id
@@ -100,7 +100,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
 
     private fun getShipComponentsForPlayer(playerId: Int): List<ShipComponent> {
         return playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
-            playerShipComponentDao.findAllComponents(ship.id)
+            playerShipComponentDao.findByPlayerShipId(ship.id)
         }
     }
 

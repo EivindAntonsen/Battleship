@@ -65,7 +65,7 @@ class PlayerTurnDao(private val logger: Logger,
         return logger.log("playerId", playerId) {
             try {
                 namedTemplate.query(query, parameterSource) { rs, _ ->
-                    val coordinate = Coordinate(rs.getInt(CoordinateDao.PRIMARY_KEY),
+                    val coordinate = Coordinate(rs.getInt(COORDINATE_ID),
                                                 rs.getString(CoordinateDao.X_COORDINATE)[0],
                                                 rs.getInt(CoordinateDao.Y_COORDINATE))
 

@@ -3,6 +3,7 @@ package no.esa.battleship.repository.playershipcomponent
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.boardcoordinate.CoordinateDao
 import no.esa.battleship.repository.exceptions.DataAccessException
+import no.esa.battleship.repository.player.PlayerDao
 import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.ShipComponent
 import no.esa.battleship.utils.log
@@ -55,51 +56,42 @@ class PlayerShipComponentDao(private val logger: Logger,
         }
     }
 
-    override fun findAllComponents(playerShipId: Int): List<ShipComponent> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findAllComponents)
+    override fun findByGameId(gameId: Int): List<ShipComponent> {
+        val query = QueryFileReader.readSqlFile(this::class, ::findByGameId)
+        val parameterSource = MapSqlParameterSource().apply {
+            addValue(PlayerDao.GAME_ID, gameId)
+        }
+
+        return logger.log("gameId", gameId) {
+            find(query, parameterSource)
+        }
+    }
+
+    override fun findByPlayerShipId(playerShipId: Int): List<ShipComponent> {
+        val query = QueryFileReader.readSqlFile(this::class, ::findByPlayerShipId)
         val parameterSource = MapSqlParameterSource().apply {
             addValue(PLAYER_SHIP_ID, playerShipId)
         }
 
         return logger.log("playerShipId", playerShipId) {
-            try {
-                namedTemplate.query(query, parameterSource) { rs, _ ->
-                    val coordinateId = rs.getInt(COORDINATE_ID)
-                    val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
-                    val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
-
-                    ShipComponent(rs.getInt(PRIMARY_KEY),
-                                  rs.getInt(PLAYER_SHIP_ID),
-                                  Coordinate(coordinateId, xCoordinate, yCoordinate),
-                                  rs.getBoolean(IS_DESTROYED))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::findAllComponents, error)
-            }
+            find(query, parameterSource)
         }
     }
 
-    override fun findRemainingShipComponents(gameId: Int): List<ShipComponent> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findRemainingShipComponents)
-        MapSqlParameterSource().apply {
-            addValue("game_id", gameId)
-        }
+    fun find(query: String, parameterSource: MapSqlParameterSource): List<ShipComponent> {
+        return try {
+            namedTemplate.query(query, parameterSource) { rs, _ ->
+                val coordinateId = rs.getInt(COORDINATE_ID)
+                val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
+                val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
 
-        return logger.log {
-            try {
-                jdbcTemplate.query(query) { rs, _ ->
-                    val coordinateId = rs.getInt(COORDINATE_ID)
-                    val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
-                    val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
-
-                    ShipComponent(rs.getInt(PRIMARY_KEY),
-                                  rs.getInt(PLAYER_SHIP_ID),
-                                  Coordinate(coordinateId, xCoordinate, yCoordinate),
-                                  rs.getBoolean(IS_DESTROYED))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::findRemainingShipComponents, error)
+                ShipComponent(rs.getInt(PRIMARY_KEY),
+                              rs.getInt(PLAYER_SHIP_ID),
+                              Coordinate(coordinateId, xCoordinate, yCoordinate),
+                              rs.getBoolean(IS_DESTROYED))
             }
+        } catch (error: Exception) {
+            throw DataAccessException(this::class, ::findByPlayerShipId, error)
         }
     }
 

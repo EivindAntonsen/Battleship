@@ -3,7 +3,6 @@ select pt.id,
        player_id,
        coordinate_id,
        is_hit,
-       c.id,
        c.y_coordinate,
        c.x_coordinate
 from battleship.player_turn pt

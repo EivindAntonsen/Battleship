@@ -124,7 +124,7 @@ class ShipPlacementService(private val logger: Logger,
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
         val allCoordinates = coordinateDao.findAll()
         val occupiedCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
-            playerShipComponentDao.findAllComponents(ship.id).map { component ->
+            playerShipComponentDao.findByPlayerShipId(ship.id).map { component ->
                 component.coordinate
             }
         }
