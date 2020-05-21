@@ -1,7 +1,7 @@
 package no.esa.battleship.service.gameplay
 
-import no.esa.battleship.service.domain.Player
+import no.esa.battleship.service.domain.Result
 
 interface IGamePlayService {
-    fun playGame(gameId: Int): Player?
+    fun playGame(gameId: Int): Result
 }

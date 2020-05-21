@@ -7,7 +7,7 @@ post:
     - name: gameId
       in: query
       description: The id of the game to play
-      required: true
+      required: false
       schema:
         type: integer
         format: int32
@@ -16,10 +16,10 @@ post:
       content:
         application/json:
           schema:
-            type: string
+            $ref: "./game/gameDefinitions.yaml#/components/schemas/ResultDTO"
     500:
       description: error payload
       content:
-        text/plain:
+        application/json:
           schema:
-            type: string
+            $ref: "./common/commonDefinition.yaml#/components/schemas/Error"

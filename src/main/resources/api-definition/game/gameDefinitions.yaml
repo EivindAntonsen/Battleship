@@ -1,0 +1,13 @@
+components:
+  schemas:
+    ResultDTO:
+      type: object
+      properties:
+        gameId:
+          type: integer
+          format: int32
+        winningPlayerId:
+          type: integer
+          format: int32
+      required:
+        - gameId

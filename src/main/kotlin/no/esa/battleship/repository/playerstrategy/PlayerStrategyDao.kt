@@ -60,7 +60,7 @@ class PlayerStrategyDao(private val logger: Logger,
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)
-            }
-        } ?: throw NoSuchStrategyException(playerId)
+            } ?: throw NoSuchStrategyException(playerId)
+        }
     }
 }

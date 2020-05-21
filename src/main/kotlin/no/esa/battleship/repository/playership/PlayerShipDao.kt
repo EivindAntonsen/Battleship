@@ -1,6 +1,5 @@
 package no.esa.battleship.repository.playership
 
-import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.exceptions.NoSuchShipException
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.ShipMapper
@@ -8,7 +7,6 @@ import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
-import org.springframework.dao.IncorrectResultSizeDataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

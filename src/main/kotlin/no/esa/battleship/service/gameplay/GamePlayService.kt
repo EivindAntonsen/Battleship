@@ -1,13 +1,15 @@
 package no.esa.battleship.service.gameplay
 
-import no.esa.battleship.exceptions.InvalidGameStateException
+import no.esa.battleship.exceptions.NoValidCoordinatesException
 import no.esa.battleship.repository.boardcoordinate.ICoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
+import no.esa.battleship.repository.result.IResultDao
 import no.esa.battleship.service.domain.Player
+import no.esa.battleship.service.domain.Result
 import no.esa.battleship.service.domain.ShipComponent
 import org.springframework.stereotype.Service
 
@@ -21,9 +23,10 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                       private val gameDao: IGameDao,
                       private val playerShipDao: IPlayerShipDao,
                       private val playerShipComponentDao: IPlayerShipComponentDao,
-                      private val playerTurnDao: IPlayerTurnDao) : IGamePlayService {
+                      private val playerTurnDao: IPlayerTurnDao,
+                      private val resultDao: IResultDao) : IGamePlayService {
 
-    override fun playGame(gameId: Int): Player? {
+    override fun playGame(gameId: Int): Result {
         val (player1, player2) = getPlayersInGame(gameId)
 
         var gameTurnId = 1
@@ -37,11 +40,13 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
 
         val remainingPlayers = findRemainingPlayers(gameId)
 
-        return when {
+        val winningPlayer = when {
             remainingPlayers.size > 1 -> null
             remainingPlayers.isEmpty() -> null
             else -> remainingPlayers.first()
         }
+
+        return resultDao.save(gameId, winningPlayer?.id)
     }
 
     private fun findRemainingPlayers(gameId: Int): List<Player> {
@@ -57,8 +62,6 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                                 gameTurn: Int) {
 
         if (playerFleetIsAlive(currentPlayer.id)) {
-            if (gameTurn > 1000) throw InvalidGameStateException("Game should have been concluded by now!")
-
             val availableCoordinates = getAvailableCoordinatesForPlayer(currentPlayer.id)
             val targetCoordinateId = availableCoordinates.random()
 
@@ -88,7 +91,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         }.filter { coordinateId ->
             coordinateId !in unavailableCoordinateIds
         }.ifEmpty {
-            throw InvalidGameStateException("No valid coordinates left for player $playerId!")
+            throw NoValidCoordinatesException("No valid coordinates left for player $playerId!")
         }
     }
 

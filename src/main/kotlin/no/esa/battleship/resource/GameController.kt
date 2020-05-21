@@ -1,6 +1,8 @@
 package no.esa.battleship.resource
 
 import no.esa.battleship.api.GameApi
+import no.esa.battleship.model.ResultDTO
+import no.esa.battleship.resource.mapper.ResultMapper
 import no.esa.battleship.service.gameplay.IGamePlayService
 import no.esa.battleship.service.initialization.IGameInitializationService
 import no.esa.battleship.utils.log
@@ -21,13 +23,12 @@ class GameController(private val logger: Logger,
         }
     }
 
-    override fun playGame(gameId: Int): ResponseEntity<String> {
+    override fun playGame(gameId: Int?): ResponseEntity<ResultDTO> {
         return logger.log("gameId", gameId) {
-            val winner = gamePlayService.playGame(gameId)
+            val result = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame().id)
+            val resultDTO = ResultMapper.toDto(result)
 
-            if (winner == null) {
-                ResponseEntity.ok("Game was a draw!")
-            } else ResponseEntity.ok("Player ${winner.id} won!")
+            ResponseEntity.ok(resultDTO)
         }
     }
 }

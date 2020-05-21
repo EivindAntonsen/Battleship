@@ -1,7 +1,6 @@
 package no.esa.battleship.resource
 
 import no.esa.battleship.exceptions.GameInitialization
-import no.esa.battleship.exceptions.InvalidGameStateException
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
@@ -33,25 +32,6 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
                 .body(resourceBundle.getString("dataAccessException.$callingClass.$callingFunction"))
-    }
-
-    /**
-     * These errors occur when the state of the game is invalid.
-     *
-     * Examples (more may exist):
-     *   1. Games with more than 2 players.
-     *   2. Players with more than 5 ships.
-     *   3. Player ships that overlap.
-     *   4. Ships with more than 5 components.
-     *   5. Games that haven't concluded after 100 turns etc (only 100 tiles in game board).
-     */
-    @ExceptionHandler(InvalidGameStateException::class)
-    fun handle(exception: InvalidGameStateException): ResponseEntity<String> {
-        logger.warn(exception.message)
-
-        return ResponseEntity
-                .status(INTERNAL_SERVER_ERROR)
-                .body(exception.message)
     }
 
     @ExceptionHandler(GameInitialization::class)
