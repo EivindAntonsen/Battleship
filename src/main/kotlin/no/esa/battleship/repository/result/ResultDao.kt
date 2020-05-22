@@ -32,7 +32,7 @@ class ResultDao(private val logger: Logger,
             tableName = TABLE_NAME
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
             winningPlayerId?.let {
                 addValue(WINNING_PLAYER_ID, it)
@@ -41,7 +41,7 @@ class ResultDao(private val logger: Logger,
 
         return logger.log("gameId", gameId) {
             try {
-                val id = simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+                val id = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
                 Result(id, gameId, winningPlayerId)
             } catch (error: Exception) {
@@ -52,13 +52,13 @@ class ResultDao(private val logger: Logger,
 
     override fun get(gameId: Int): Result {
         val query = QueryFileReader.readSqlFile(this::class, ::get)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }
 
         return logger.log("gameId", gameId) {
             try {
-                namedParameterJdbcTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                namedParameterJdbcTemplate.queryForObject(query, parameters) { rs, _ ->
                     Result(rs.getInt(PRIMARY_KEY),
                            rs.getInt(GAME_ID),
                            rs.getInt(WINNING_PLAYER_ID))

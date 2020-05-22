@@ -19,21 +19,10 @@ import org.springframework.stereotype.Service
 class ShipPlacementService(private val logger: Logger,
                            private val playerShipDao: IPlayerShipDao,
                            private val playerShipComponentDao: IPlayerShipComponentDao,
-                           private val coordinateDao: ICoordinateDao): IShipPlacementService {
+                           private val coordinateDao: ICoordinateDao) : IShipPlacementService {
 
     companion object {
         private const val MAX_BOARD_LENGTH = 10
-        private val X_Y_MAP = mapOf(
-                'a' to 1,
-                'b' to 2,
-                'c' to 3,
-                'd' to 4,
-                'e' to 5,
-                'f' to 6,
-                'g' to 7,
-                'h' to 8,
-                'i' to 9,
-                'j' to 10)
     }
 
     override fun placeShipsForPlayer(playerId: Int) {
@@ -51,12 +40,8 @@ class ShipPlacementService(private val logger: Logger,
                           availableCoordinates: List<Coordinate>,
                           shipType: ShipType): Ship {
 
-        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinates,
-                                                                         axis,
-                                                                         shipType)
-        val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates,
-                                                                         axis,
-                                                                         shipType)
+        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinates, axis, shipType)
+        val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates, axis, shipType)
 
         val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinates ->
             availableCoordinates.containsAll(coordinates)
@@ -68,25 +53,30 @@ class ShipPlacementService(private val logger: Logger,
         return ship
     }
 
+    /**
+     * Based on available coordinates, this returns a list of coordinates where
+     * a ship of a given type may ultimately be placed.
+     * Validation is done by ensuring the resulting list is of the same size as the ship type.
+     *
+     * @param availableCoordinates is the list of coordinates where a ship may be placed.
+     * @param axis is the plane of the ship, i.e. vertical or horizontal.
+     * @param shipType is which ship type it is, i.e. Battleship, Cruiser etc.
+     *                 They have different sizes, and the resulting list needs to match that.
+     */
     private fun getShipComponentCoordinates(availableCoordinates: List<Coordinate>,
                                             axis: Axis,
                                             shipType: ShipType): List<List<Coordinate>> {
 
         return availableCoordinates.shuffled().mapNotNull { index ->
-            val vIndex = index.vertical_position
-            val hIndex = X_Y_MAP[index.horizontal_position]!!
-
             val allowedRange = if (axis == VERTICAL) {
-                vIndex until vIndex + shipType.size
-            } else hIndex until (hIndex + shipType.size)
+                index.vertical_position until index.vertical_position + shipType.size
+            } else index.horizontalPositionAsInt() until (index.horizontalPositionAsInt() + shipType.size)
 
-            availableCoordinates.filter { coordinate ->
+            availableCoordinates.filter {
                 if (axis == VERTICAL) {
-                    coordinate isHorizontallyAlignedWith index
-                            && coordinate.vertical_position in allowedRange
+                    it isHorizontallyAlignedWith index && it.vertical_position in allowedRange
                 } else {
-                    coordinate isVerticallyAlignedWith index
-                            && X_Y_MAP[coordinate.horizontal_position]!! in allowedRange
+                    it isVerticallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
                 throw ShipPlacementException("Unable to generate a list of coordinates on a $axis plane for $shipType!")
@@ -110,17 +100,20 @@ class ShipPlacementService(private val logger: Logger,
                                                        shipType: ShipType): List<Coordinate> {
 
         val blacklist = if (axis == VERTICAL) {
-            (MAX_BOARD_LENGTH - shipType.size + 1)..MAX_BOARD_LENGTH
+            MAX_BOARD_LENGTH until shipType.size
         } else 1..shipType.size
 
         return availableCoordinates.filter { coordinate ->
             when (axis) {
                 VERTICAL -> coordinate.vertical_position !in blacklist
-                HORIZONTAL -> X_Y_MAP[coordinate.horizontal_position] !in blacklist
+                HORIZONTAL -> coordinate.horizontalPositionAsInt() !in blacklist
             }
         }
     }
 
+    /**
+     * Returns a list of coordinates that are not occupied by any ship components.
+     */
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
         val allCoordinates = coordinateDao.findAll()
         val occupiedCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
@@ -130,7 +123,7 @@ class ShipPlacementService(private val logger: Logger,
         }
 
         return allCoordinates.filter { coordinate ->
-            coordinate.id !in occupiedCoordinates.map { it.id }
+            coordinate !in occupiedCoordinates
         }
     }
 }

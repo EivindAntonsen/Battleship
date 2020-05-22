@@ -1,4 +1,4 @@
 insert into battleship.strategy (name, description)
 values ('Randomizer', 'An entirely random strategy.'),
-       ('Mathematician', 'Attempts to calculate the best move based on past moves.'),
-       ('Mimic', 'Mimics every move of the opponent as long as possible.');
+       ('Default', 'Random until it hits something, then attempts to find the rest.'),
+       ('Mathematician', 'Calculates the best move bast on past moves.');

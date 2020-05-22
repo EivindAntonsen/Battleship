@@ -39,14 +39,14 @@ class PlayerShipComponentDao(private val logger: Logger,
                     usingGeneratedKeyColumns(PRIMARY_KEY)
                 }
 
-                val parameterSource = MapSqlParameterSource().apply {
+                val parameters = MapSqlParameterSource().apply {
                     addValue(PLAYER_SHIP_ID, playerShipId)
                     addValue(COORDINATE_ID, coordinate.id)
                     addValue(IS_DESTROYED, false)
                 }
 
                 val componentId = try {
-                    simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+                    simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
                 } catch (error: Exception) {
                     throw DataAccessException(this::class, ::save, error)
                 }
@@ -58,23 +58,23 @@ class PlayerShipComponentDao(private val logger: Logger,
 
     override fun findByGameId(gameId: Int): List<ShipComponent> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByGameId)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PlayerDao.GAME_ID, gameId)
         }
 
         return logger.log("gameId", gameId) {
-            find(query, parameterSource)
+            find(query, parameters)
         }
     }
 
     override fun findByPlayerShipId(playerShipId: Int): List<ShipComponent> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByPlayerShipId)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_SHIP_ID, playerShipId)
         }
 
         return logger.log("playerShipId", playerShipId) {
-            find(query, parameterSource)
+            find(query, parameters)
         }
     }
 
@@ -98,13 +98,13 @@ class PlayerShipComponentDao(private val logger: Logger,
     @Synchronized
     override fun update(playerShipComponentId: Int, isDestroyed: Boolean): Int {
         val query = QueryFileReader.readSqlFile(this::class, ::update)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, playerShipComponentId)
         }
 
         return logger.log("playerShipComponentId", playerShipComponentId) {
             try {
-                namedTemplate.update(query, parameterSource)
+                namedTemplate.update(query, parameters)
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::update, error)
             }

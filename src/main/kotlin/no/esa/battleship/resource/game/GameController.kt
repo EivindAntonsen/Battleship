@@ -1,4 +1,4 @@
-package no.esa.battleship.resource
+package no.esa.battleship.resource.game
 
 import no.esa.battleship.api.GameApi
 import no.esa.battleship.model.ResultDTO
@@ -9,23 +9,24 @@ import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 
 @RestController
 class GameController(private val logger: Logger,
                      private val gameInitializationService: IGameInitializationService,
                      private val gamePlayService: IGamePlayService) : GameApi {
 
-    override fun initializeNewGame(): ResponseEntity<Int> {
+    override fun initializeNewGame(gameSeriesId: UUID?): ResponseEntity<Int> {
         return logger.log {
-            val game = gameInitializationService.initializeNewGame()
+            val game = gameInitializationService.initializeNewGame(gameSeriesId)
 
             ResponseEntity.ok(game.id)
         }
     }
 
-    override fun playGame(gameId: Int?): ResponseEntity<ResultDTO> {
+    override fun playGame(gameId: Int?, gameSeriesId: UUID?): ResponseEntity<ResultDTO> {
         return logger.log("gameId", gameId) {
-            val result = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame().id)
+            val result = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(gameSeriesId).id)
             val resultDTO = ResultMapper.toDto(result)
 
             ResponseEntity.ok(resultDTO)

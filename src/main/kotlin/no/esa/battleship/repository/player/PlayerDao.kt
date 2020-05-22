@@ -32,13 +32,13 @@ class PlayerDao(private val logger: Logger,
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
 
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }
 
         return logger.log {
             try {
-                simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::save, error)
             }
@@ -47,13 +47,13 @@ class PlayerDao(private val logger: Logger,
 
     override fun find(playerId: Int): Player {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, playerId)
         }
 
         return logger.log("playerId", playerId) {
             try {
-                namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                namedTemplate.queryForObject(query, parameters) { rs, _ ->
                     Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {
@@ -65,13 +65,13 @@ class PlayerDao(private val logger: Logger,
 
     override fun findPlayersInGame(gameId: Int): List<Player> {
         val query = QueryFileReader.readSqlFile(this::class, ::findPlayersInGame)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }
 
         return logger.log("gameId", gameId) {
             try {
-                namedTemplate.query(query, parameterSource) { rs, _ ->
+                namedTemplate.query(query, parameters) { rs, _ ->
                     Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {

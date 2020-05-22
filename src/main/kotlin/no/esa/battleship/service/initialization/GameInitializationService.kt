@@ -12,6 +12,7 @@ import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import java.util.*
 
 @Service
 class GameInitializationService(private val logger: Logger,
@@ -21,9 +22,9 @@ class GameInitializationService(private val logger: Logger,
                                 private val playerStrategyDao: IPlayerStrategyDao)
     : IGameInitializationService {
 
-    override fun initializeNewGame(): Game {
+    override fun initializeNewGame(gameSeriesId: UUID?): Game {
         return logger.log {
-            val game = newGame()
+            val game = newGame(gameSeriesId)
 
             val player1 = newPlayer(game)
             shipPlacementService.placeShipsForPlayer(player1.id)
@@ -34,11 +35,11 @@ class GameInitializationService(private val logger: Logger,
         }
     }
 
-    private fun newGame(): Game {
+    private fun newGame(gameSeriesId: UUID? = null): Game {
         val currentTime = LocalDateTime.now()
         val id = gameDao.save(currentTime)
 
-        return Game(id, currentTime, false)
+        return Game(id, currentTime, gameSeriesId, false)
     }
 
     private fun newPlayer(game: Game): Player {

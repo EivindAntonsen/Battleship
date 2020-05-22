@@ -8,15 +8,13 @@ import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
 import no.esa.battleship.repository.result.IResultDao
+import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.domain.Result
 import no.esa.battleship.service.domain.ShipComponent
+import no.esa.battleship.utils.isAdjacentWith
 import org.springframework.stereotype.Service
 
-
-/**
- * This service handles the actual playing of a game.
- */
 @Service
 class GamePlayService(private val coordinateDao: ICoordinateDao,
                       private val playerDao: IPlayerDao,
@@ -49,7 +47,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         return resultDao.save(gameId, winningPlayer?.id)
     }
 
-    private fun findRemainingPlayers(gameId: Int): List<Player> {
+    override fun findRemainingPlayers(gameId: Int): List<Player> {
         return playerShipComponentDao.findByGameId(gameId).map { shipComponent ->
             val ship = playerShipDao.find(shipComponent.playerShipId)
 
@@ -57,23 +55,40 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         }.distinct()
     }
 
+
+    /**
+     * This function calculates the probable minimum distance between
+     * shots to account for any destroyed ship. i.e. if the smallest ship
+     * has been verified destroyed (2 coordinates long),
+     * the new minimum distance between neighbouring coordinates is now 2 coordinates.
+     */
+    override fun calculateProbableMinimumDistance(playerId: Int): Int {
+        val previousHits = playerTurnDao.getPreviousTurnsForPlayer(playerId).filter { it.isHit }
+        val hitsAndAdjacentHits = previousHits.map { previousHit ->
+            previousHit.coordinate to previousHits.filter { anotherHit ->
+                previousHit.coordinate isAdjacentWith anotherHit.coordinate
+            }.map { it.coordinate }
+        }.toMap()
+
+        TODO() // finish this function
+    }
+
     private fun executeGameTurn(currentPlayer: Player,
                                 targetPlayer: Player,
                                 gameTurn: Int) {
 
         if (playerFleetIsAlive(currentPlayer.id)) {
-            val availableCoordinates = getAvailableCoordinatesForPlayer(currentPlayer.id)
-            val targetCoordinateId = availableCoordinates.random()
+            val targetCoordinate = getTargetCoordinate(currentPlayer.id)
 
             getShipComponentsForPlayer(targetPlayer.id).firstOrNull { shipComponent ->
-                shipComponent.coordinate.id == targetCoordinateId
+                shipComponent.coordinate == targetCoordinate
             }.let { shipComponent ->
                 if (shipComponent != null) {
                     playerShipComponentDao.update(shipComponent.id, true)
                 }
 
                 playerTurnDao.save(currentPlayer.id,
-                                   targetCoordinateId,
+                                   targetCoordinate.id,
                                    shipComponent != null,
                                    gameTurn)
             }
@@ -81,18 +96,35 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         } else gameDao.conclude(currentPlayer.gameId)
     }
 
-    private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Int> {
-        val unavailableCoordinateIds = playerTurnDao.getPreviousTurnsForPlayer(playerId)
-                .map { it.coordinate.id }
-                .distinct()
+    /**
+     * Finds the next set of coordinates to target.
+     *
+     * It finds adjacent coordinates to the coordinates that have been
+     * confirmed hits. If all adjacent coordinates have been exhausted, it
+     * falls back to a random one.
+     */
+    override fun getTargetCoordinate(playerId: Int): Coordinate {
+        val previousTurnsForPlayer = playerTurnDao.getPreviousTurnsForPlayer(playerId)
 
-        return coordinateDao.findAll().map { coordinate ->
-            coordinate.id
-        }.filter { coordinateId ->
-            coordinateId !in unavailableCoordinateIds
-        }.ifEmpty {
-            throw NoValidCoordinatesException("No valid coordinates left for player $playerId!")
+        val unavailableCoordinates = previousTurnsForPlayer.map { it.coordinate }.distinct()
+
+        val availableCoordinates = coordinateDao.findAll().filter { coordinate ->
+            coordinate !in unavailableCoordinates
         }
+
+        val coordinatesAdjacentWithPreviousHits = previousTurnsForPlayer.filter { turn ->
+            turn.isHit
+        }.flatMap { previousHit ->
+            availableCoordinates.filter { availableCoordinate ->
+                previousHit.coordinate isAdjacentWith availableCoordinate
+            }
+        }
+
+        return when {
+            coordinatesAdjacentWithPreviousHits.isNotEmpty() -> coordinatesAdjacentWithPreviousHits
+            availableCoordinates.isNotEmpty() -> availableCoordinates
+            else -> throw NoValidCoordinatesException("No valid coordinates left for player $playerId!")
+        }.random()
     }
 
     private fun playerFleetIsAlive(playerId: Int): Boolean {

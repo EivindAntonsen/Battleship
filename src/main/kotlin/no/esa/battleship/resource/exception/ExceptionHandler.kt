@@ -1,10 +1,11 @@
-package no.esa.battleship.resource
+package no.esa.battleship.resource.exception
 
 import no.esa.battleship.exceptions.GameInitialization
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -27,6 +28,7 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
         val callingClass = exception.callingClass.simpleName?.toCamelCase()
         val callingFunction = exception.callingFunction.name
 
+        exception.printStackTrace()
         logger.error(exception.cause?.message ?: exception.message ?: exception.toString())
 
         return ResponseEntity
@@ -36,10 +38,21 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
 
     @ExceptionHandler(GameInitialization::class)
     fun handle(exception: GameInitialization): ResponseEntity<String> {
+        exception.printStackTrace()
         logger.warn(exception.message)
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
+                .body(exception.message)
+    }
+
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handle(exception: IllegalArgumentException): ResponseEntity<String> {
+        exception.printStackTrace()
+        logger.warn(exception.message)
+
+        return ResponseEntity
+                .status(BAD_REQUEST)
                 .body(exception.message)
     }
 
@@ -48,6 +61,7 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(Exception::class)
     fun handle(exception: Throwable): ResponseEntity<String> {
+        exception.printStackTrace()
         logger.warn(exception.message)
 
         return ResponseEntity

@@ -15,7 +15,7 @@ enum class Strategy(val id: Int) {
 
     RANDOMIZER(1),
     DEFAULT(2),
-    MIMIC(3);
+    MATHEMATICIAN(3);
 
     companion object {
 

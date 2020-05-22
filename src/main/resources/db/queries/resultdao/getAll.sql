@@ -1,1 +1,2 @@
-select * from battleship.result;
+select *
+from battleship.result;

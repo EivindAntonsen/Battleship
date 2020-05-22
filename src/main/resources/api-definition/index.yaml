@@ -7,3 +7,5 @@ paths:
     $ref: "./game/new.yaml"
   /game/play:
     $ref: "./game/play.yaml"
+  /analysis:
+    $ref: "./analysis/analyse.yaml"

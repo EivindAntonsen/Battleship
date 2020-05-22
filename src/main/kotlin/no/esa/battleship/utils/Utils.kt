@@ -2,8 +2,6 @@ package no.esa.battleship.utils
 
 import no.esa.battleship.service.domain.Coordinate
 import org.slf4j.Logger
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
 
 const val STRING_MAX_LENGTH = 100
 
@@ -42,6 +40,11 @@ infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
     return this.vertical_position == that.vertical_position
 }
 
+infix fun Coordinate.isAdjacentWith(that: Coordinate): Boolean {
+    return this.vertical_position - that.vertical_position in listOf(-1, 0, 1) &&
+            this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 0, 1)
+}
+
 fun String.toCamelCase(): String? {
     return try {
         this[0].toLowerCase() + substring(1)
@@ -49,5 +52,3 @@ fun String.toCamelCase(): String? {
         null
     }
 }
-
-fun getClassAndFunctionNames(clazz: KClass<*>, function: KFunction<*>): Pair<String?, String> = clazz.simpleName to function.name

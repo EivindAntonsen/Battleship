@@ -1,1 +1,3 @@
-select * from battleship.player where id = :id
+select *
+from battleship.player
+where id = :id

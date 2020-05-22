@@ -25,18 +25,17 @@ class PlayerShipDao(private val logger: Logger,
         const val PRIMARY_KEY = "id"
         const val PLAYER_ID = "player_id"
         const val SHIP_TYPE_ID = "ship_type_id"
-        const val IS_FINISHED = "is_finished"
     }
 
     override fun findAllShipsForPlayer(playerId: Int): List<Ship> {
         val query = QueryFileReader.readSqlFile(this::class, ::findAllShipsForPlayer)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
         return logger.log("playerId", playerId) {
             try {
-                namedTemplate.query(query, parameterSource) { rs, _ ->
+                namedTemplate.query(query, parameters) { rs, _ ->
                     val shipTypeId = rs.getInt(SHIP_TYPE_ID)
                     val id = rs.getInt(PRIMARY_KEY)
 
@@ -50,13 +49,13 @@ class PlayerShipDao(private val logger: Logger,
 
     override fun find(id: Int): Ship {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, id)
         }
 
         return logger.log("id", id) {
             try {
-                namedTemplate.queryForObject(query, parameterSource) { rs, _ ->
+                namedTemplate.queryForObject(query, parameters) { rs, _ ->
                     val playerId = rs.getInt(PLAYER_ID)
                     val shipTypeId = rs.getInt(SHIP_TYPE_ID)
 
@@ -70,7 +69,7 @@ class PlayerShipDao(private val logger: Logger,
 
     @Synchronized
     override fun save(playerId: Int, shipTypeId: Int): Ship {
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
             addValue(SHIP_TYPE_ID, shipTypeId)
         }
@@ -82,7 +81,7 @@ class PlayerShipDao(private val logger: Logger,
 
         return logger.log("playerId", playerId) {
             val shipId = try {
-                simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::save, error)
             }

@@ -3,6 +3,14 @@ post:
   operationId: initializeNewGame
   tags:
     - game
+  parameters:
+    - name: gameSeriesId
+      in: query
+      description: The id of the series this game belongs to
+      required: false
+      schema:
+        type: string
+        format: uuid
   responses:
     200:
       description: The ID of the game

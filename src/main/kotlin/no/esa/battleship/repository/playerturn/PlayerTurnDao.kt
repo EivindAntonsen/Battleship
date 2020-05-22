@@ -40,7 +40,7 @@ class PlayerTurnDao(private val logger: Logger,
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
 
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
             addValue(COORDINATE_ID, coordinateId)
             addValue(GAME_TURN, gameTurn)
@@ -49,7 +49,7 @@ class PlayerTurnDao(private val logger: Logger,
 
         return logger.log {
             try {
-                simpleJdbcInsert.executeAndReturnKey(parameterSource).toInt()
+                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::save, error)
             }
@@ -58,13 +58,13 @@ class PlayerTurnDao(private val logger: Logger,
 
     override fun getPreviousTurnsForPlayer(playerId: Int): List<PlayerTurn> {
         val query = QueryFileReader.readSqlFile(this::class, ::getPreviousTurnsForPlayer)
-        val parameterSource = MapSqlParameterSource().apply {
+        val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
         return logger.log("playerId", playerId) {
             try {
-                namedTemplate.query(query, parameterSource) { rs, _ ->
+                namedTemplate.query(query, parameters) { rs, _ ->
                     val coordinate = Coordinate(rs.getInt(COORDINATE_ID),
                                                 rs.getString(CoordinateDao.X_COORDINATE)[0],
                                                 rs.getInt(CoordinateDao.Y_COORDINATE))

@@ -8,5 +8,6 @@ interface IPlayerTurnDao {
              coordinateId: Int,
              isHit: Boolean,
              gameTurn: Int): Int
+
     fun getPreviousTurnsForPlayer(playerId: Int): List<PlayerTurn>
 }

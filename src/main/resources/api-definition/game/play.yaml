@@ -11,6 +11,13 @@ post:
       schema:
         type: integer
         format: int32
+    - name: gameSeriesId
+      in: query
+      description: The id of the series this game belongs to
+      required: false
+      schema:
+        type: string
+        format: uuid
   responses:
     200:
       content:

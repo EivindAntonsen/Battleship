@@ -70,6 +70,7 @@ dependencies {
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin")
     implementation(group = jetBrains, name = "kotlin-reflect")
     implementation(group = jetBrains, name = "kotlin-stdlib-jdk8")
+    implementation(group = jetBrains + "x", name = "kotlinx-coroutines-core", version = "1.3.7")
     implementation(group = "org.flywaydb", name = "flyway-core", version = "6.4.1")
     implementation(group = "org.postgresql", name = "postgresql", version = "42.2.12")
     implementation(group = "io.springfox", name = "springfox-swagger2", version = "2.9.2")
