@@ -13,6 +13,8 @@ import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.domain.Result
 import no.esa.battleship.service.domain.ShipComponent
 import no.esa.battleship.utils.isAdjacentWith
+import no.esa.battleship.utils.isHorizontallyAlignedWith
+import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.springframework.stereotype.Service
 
 @Service
@@ -64,11 +66,6 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
      */
     override fun calculateProbableMinimumDistance(playerId: Int): Int {
         val previousHits = playerTurnDao.getPreviousTurnsForPlayer(playerId).filter { it.isHit }
-        val hitsAndAdjacentHits = previousHits.map { previousHit ->
-            previousHit.coordinate to previousHits.filter { anotherHit ->
-                previousHit.coordinate isAdjacentWith anotherHit.coordinate
-            }.map { it.coordinate }
-        }.toMap()
 
         TODO() // finish this function
     }
