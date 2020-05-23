@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import java.util.*
+import javax.validation.ConstraintViolationException
 
 @ControllerAdvice
 class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: ResourceBundle,
@@ -46,8 +47,9 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
                 .body(exception.message)
     }
 
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handle(exception: IllegalArgumentException): ResponseEntity<String> {
+    @ExceptionHandler(ConstraintViolationException::class,
+                      IllegalArgumentException::class)
+    fun handle(exception: ConstraintViolationException): ResponseEntity<String> {
         exception.printStackTrace()
         logger.warn(exception.message)
 
