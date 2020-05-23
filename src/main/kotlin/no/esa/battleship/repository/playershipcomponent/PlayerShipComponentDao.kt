@@ -1,7 +1,7 @@
 package no.esa.battleship.repository.playershipcomponent
 
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.boardcoordinate.CoordinateDao
+import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.player.PlayerDao
 import no.esa.battleship.service.domain.Coordinate

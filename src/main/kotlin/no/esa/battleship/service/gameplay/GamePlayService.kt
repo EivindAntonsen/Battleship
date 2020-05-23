@@ -1,7 +1,7 @@
 package no.esa.battleship.service.gameplay
 
 import no.esa.battleship.exceptions.NoValidCoordinatesException
-import no.esa.battleship.repository.boardcoordinate.ICoordinateDao
+import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
@@ -13,8 +13,6 @@ import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.domain.Result
 import no.esa.battleship.service.domain.ShipComponent
 import no.esa.battleship.utils.isAdjacentWith
-import no.esa.battleship.utils.isHorizontallyAlignedWith
-import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.springframework.stereotype.Service
 
 @Service

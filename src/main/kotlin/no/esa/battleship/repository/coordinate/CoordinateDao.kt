@@ -1,4 +1,4 @@
-package no.esa.battleship.repository.boardcoordinate
+package no.esa.battleship.repository.coordinate
 
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException

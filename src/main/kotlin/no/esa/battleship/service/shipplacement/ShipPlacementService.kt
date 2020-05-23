@@ -5,7 +5,7 @@ import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
-import no.esa.battleship.repository.boardcoordinate.ICoordinateDao
+import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.service.domain.Coordinate
