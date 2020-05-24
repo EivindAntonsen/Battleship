@@ -56,7 +56,6 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         return GameReport(game,
                           playerInfos,
                           resultDao.save(gameId, winningPlayer?.id))
-
     }
 
     private fun getPerformanceAnalysis(player: Player): PerformanceAnalysis {
@@ -79,19 +78,6 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
 
             playerDao.find(ship.playerId)
         }.distinct()
-    }
-
-
-    /**
-     * This function calculates the probable minimum distance between
-     * shots to account for any destroyed ship. i.e. if the smallest ship
-     * has been verified destroyed (2 coordinates long),
-     * the new minimum distance between neighbouring coordinates is now 2 coordinates.
-     */
-    override fun calculateProbableMinimumDistance(playerId: Int): Int {
-        val previousHits = playerTurnDao.getPreviousTurnsForPlayer(playerId).filter { it.isHit }
-
-        TODO() // finish this function
     }
 
     private fun executeGameTurn(currentPlayer: Player,

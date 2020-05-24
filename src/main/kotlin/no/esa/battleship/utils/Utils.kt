@@ -18,31 +18,39 @@ fun String.abbreviate(): String {
     } else this
 }
 
-fun <R> Logger.log(identifier: String? = null, value: Any? = null, function: () -> R): R {
+fun <R> Logger.log(identifier: String? = null,
+                   value: Any? = null,
+                   function: () -> R): R {
     val className = function::class.java.enclosingClass.simpleName
     val functionName = function::class.java.enclosingMethod.name
 
-    if (identifier == null && value == null) {
-        info("Call    \t${className}\t$functionName")
-    } else info("Call    \t${className}\t$functionName\t($identifier = ${value.toString().abbreviate()})")
+    val logMessage = "Call    \t${className}\t$functionName" + {
+        if (identifier != null && value != null) {
+            "\t($identifier = ${value.toString().abbreviate()})"
+        } else null
+    }
+
+    info(logMessage)
 
     val (response, duration) = executeAndMeasureTimeMillis(function)
+
     info("Response\t${response.toString().abbreviate()}\tin ${duration}ms.")
 
     return response
 }
 
-infix fun Coordinate.isHorizontallyAlignedWith(that: Coordinate): Boolean {
+infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
     return this.horizontal_position == that.horizontal_position
 }
 
-infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
+infix fun Coordinate.isHorizontallyAlignedWith(that: Coordinate): Boolean {
     return this.vertical_position == that.vertical_position
 }
 
 infix fun Coordinate.isAdjacentWith(that: Coordinate): Boolean {
-    return this.vertical_position - that.vertical_position in listOf(-1, 0, 1) &&
-            this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 0, 1)
+    return (this isHorizontallyAlignedWith that &&
+            this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 1)) ||
+            (this isVerticallyAlignedWith that && this.vertical_position - that.vertical_position in listOf(-1, 1))
 }
 
 fun String.toCamelCase(): String? {

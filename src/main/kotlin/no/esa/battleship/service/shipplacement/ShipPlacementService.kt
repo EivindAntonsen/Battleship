@@ -10,8 +10,8 @@ import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.Ship
-import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
+import no.esa.battleship.utils.isHorizontallyAlignedWith
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -74,9 +74,9 @@ class ShipPlacementService(private val logger: Logger,
 
             availableCoordinates.filter {
                 if (axis == VERTICAL) {
-                    it isHorizontallyAlignedWith index && it.vertical_position in allowedRange
+                    it isVerticallyAlignedWith index && it.vertical_position in allowedRange
                 } else {
-                    it isVerticallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
+                    it isHorizontallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
                 throw ShipPlacementException("Unable to generate a list of coordinates on a $axis plane for $shipType!")

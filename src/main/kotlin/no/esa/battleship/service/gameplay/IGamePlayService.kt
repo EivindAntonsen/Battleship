@@ -9,5 +9,4 @@ interface IGamePlayService {
     fun playGame(gameId: Int): GameReport
     fun getTargetCoordinate(playerId: Int): Coordinate
     fun findRemainingPlayers(gameId: Int): List<Player>
-    fun calculateProbableMinimumDistance(playerId: Int): Int
 }
