@@ -7,8 +7,8 @@ enum class ShipStatus(val id: Int) {
     DESTROYED(2);
 
     companion object {
-        fun fromId(id: Int) {
-            values().firstOrNull {
+        fun fromId(id: Int): ShipStatus {
+            return values().firstOrNull {
                 it.id == id
             } ?: throw NoSuchShipStatusException(id)
         }

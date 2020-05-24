@@ -23,7 +23,7 @@ class PlayerTargetingModeDao(private val logger: Logger,
         const val TARGETING_MODE_ID = "targeting_mode_id"
     }
 
-    val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
+    private val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     override fun find(playerId: Int): TargetingMode {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
@@ -34,7 +34,7 @@ class PlayerTargetingModeDao(private val logger: Logger,
         return logger.log("playerId", playerId) {
             try {
                 namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    TargetingMode.fromInt(rs.getInt(PRIMARY_KEY))
+                    TargetingMode.fromInt(rs.getInt(TARGETING_MODE_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)
