@@ -1,17 +1,16 @@
 package no.esa.battleship.service.gameplay
 
+import no.esa.battleship.exceptions.InvalidPerformanceException
 import no.esa.battleship.exceptions.NoValidCoordinatesException
 import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
+import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
 import no.esa.battleship.repository.result.IResultDao
-import no.esa.battleship.service.domain.Coordinate
-import no.esa.battleship.service.domain.Player
-import no.esa.battleship.service.domain.Result
-import no.esa.battleship.service.domain.ShipComponent
+import no.esa.battleship.service.domain.*
 import no.esa.battleship.utils.isAdjacentWith
 import org.springframework.stereotype.Service
 
@@ -22,9 +21,11 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                       private val playerShipDao: IPlayerShipDao,
                       private val playerShipComponentDao: IPlayerShipComponentDao,
                       private val playerTurnDao: IPlayerTurnDao,
+                      private val playerStrategyDao: IPlayerStrategyDao,
                       private val resultDao: IResultDao) : IGamePlayService {
 
-    override fun playGame(gameId: Int): Result {
+    override fun playGame(gameId: Int): GameReport {
+        val game = gameDao.get(gameId)
         val (player1, player2) = getPlayersInGame(gameId)
 
         var gameTurnId = 1
@@ -44,7 +45,32 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
             else -> remainingPlayers.first()
         }
 
-        return resultDao.save(gameId, winningPlayer?.id)
+        val playerInfos = listOf(
+                PlayerInfo(player1,
+                           playerStrategyDao.find(player1.id),
+                           getPerformanceAnalysis(player1)),
+                PlayerInfo(player2,
+                           playerStrategyDao.find(player2.id),
+                           getPerformanceAnalysis(player2)))
+
+        return GameReport(game,
+                          playerInfos,
+                          resultDao.save(gameId, winningPlayer?.id))
+
+    }
+
+    private fun getPerformanceAnalysis(player: Player): PerformanceAnalysis {
+        val previousTurns = playerTurnDao.getPreviousTurnsForPlayer(player.id)
+
+        val hitCount = previousTurns.filter { it.isHit }.count()
+        val missCount = previousTurns.filterNot { it.isHit }.count()
+        val totalCount = hitCount + missCount
+
+        if (totalCount == 0) throw InvalidPerformanceException(player.id)
+
+        val hitRate = hitCount.toDouble() / totalCount.toDouble()
+
+        return PerformanceAnalysis(player, totalCount, hitCount, missCount, hitRate)
     }
 
     override fun findRemainingPlayers(gameId: Int): List<Player> {

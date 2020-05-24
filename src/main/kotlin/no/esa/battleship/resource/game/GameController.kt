@@ -1,8 +1,8 @@
 package no.esa.battleship.resource.game
 
 import no.esa.battleship.api.GameApi
-import no.esa.battleship.model.ResultDTO
-import no.esa.battleship.resource.mapper.ResultMapper
+import no.esa.battleship.model.GameReportDTO
+import no.esa.battleship.resource.mapper.GameReportMapper
 import no.esa.battleship.service.gameplay.IGamePlayService
 import no.esa.battleship.service.initialization.IGameInitializationService
 import no.esa.battleship.utils.log
@@ -24,12 +24,12 @@ class GameController(private val logger: Logger,
         }
     }
 
-    override fun playGame(gameId: Int?, gameSeriesId: UUID?): ResponseEntity<ResultDTO> {
+    override fun playGame(gameId: Int?, gameSeriesId: UUID?): ResponseEntity<GameReportDTO> {
         return logger.log("gameId", gameId) {
-            val result = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(gameSeriesId).id)
-            val resultDTO = ResultMapper.toDto(result)
+            val gameReport = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(gameSeriesId).id)
+            val gameReportDTO = GameReportMapper.toDTO(gameReport)
 
-            ResponseEntity.ok(resultDTO)
+            ResponseEntity.ok(gameReportDTO)
         }
     }
 }

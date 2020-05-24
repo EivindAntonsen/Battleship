@@ -1,13 +1,87 @@
 components:
   schemas:
-    ResultDTO:
+    Player:
       type: object
       properties:
-        gameId:
+        id:
           type: integer
           format: int32
+        strategy:
+          type: string
+          enum:
+            - Randomizer
+            - Default
+            - Mathematician
+          x-enum-varnames:
+            - RANDOMIZER
+            - DEFAULT
+            - MATHEMATICIAN
+      required:
+        - id
+        - strategy
+    PerformanceAnalysis:
+      type: object
+      properties:
+        playerId:
+          type: integer
+          format: int32
+        shots:
+          type: integer
+          format: int32
+        hits:
+          type: integer
+          format: int32
+        misses:
+          type: integer
+          format: int32
+        hitRate:
+          type: number
+          format: double
+      required:
+        - playerId
+        - shots
+        - hits
+        - misses
+        - hitRate
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        gameSeriesId:
+          type: integer
+          format: int32
+        datetime:
+          type: string
+          format: date-time
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+      required:
+        - id
+        - datetime
+        - players
+    Result:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
         winningPlayerId:
           type: integer
           format: int32
       required:
-        - gameId
+        - game
+    GameReportDTO:
+      type: object
+      properties:
+        result:
+          $ref: "#/components/schemas/Result"
+        playerPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformanceAnalysis"
+      required:
+        - result
+        - playerPerformance

@@ -23,7 +23,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: "./game/gameDefinitions.yaml#/components/schemas/ResultDTO"
+            $ref: "./game/gameDefinitions.yaml#/components/schemas/GameReportDTO"
     500:
       description: error payload
       content:
