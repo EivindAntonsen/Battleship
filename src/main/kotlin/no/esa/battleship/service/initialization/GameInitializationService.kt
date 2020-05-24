@@ -5,6 +5,8 @@ import no.esa.battleship.exceptions.GameInitialization.TooManyPlayersException
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
+import no.esa.battleship.repository.playertargetingmode.IPlayerTargetingModeDao
+import no.esa.battleship.repository.playertargetingmode.PlayerTargetingModeDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.shipplacement.IShipPlacementService
@@ -19,6 +21,7 @@ class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
                                 private val shipPlacementService: IShipPlacementService,
+                                private val playerTargetingModeDao: IPlayerTargetingModeDao,
                                 private val playerStrategyDao: IPlayerStrategyDao)
     : IGameInitializationService {
 
@@ -28,8 +31,10 @@ class GameInitializationService(private val logger: Logger,
 
             val player1 = newPlayer(game)
             shipPlacementService.placeShipsForPlayer(player1.id)
+            playerTargetingModeDao.save(player1.id)
             val player2 = newPlayer(game)
             shipPlacementService.placeShipsForPlayer(player2.id)
+            playerTargetingModeDao.save(player2.id)
 
             game
         }
