@@ -8,6 +8,8 @@ import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
 import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
+import no.esa.battleship.repository.playershipstatus.IPlayerShipStatusDao
+import no.esa.battleship.repository.playershipstatus.PlayerShipStatusDao
 import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.isVerticallyAlignedWith
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service
 class ShipPlacementService(private val logger: Logger,
                            private val playerShipDao: IPlayerShipDao,
                            private val playerShipComponentDao: IPlayerShipComponentDao,
+                           private val playerShipStatusDao: IPlayerShipStatusDao,
                            private val coordinateDao: ICoordinateDao) : IShipPlacementService {
 
     companion object {
@@ -49,6 +52,7 @@ class ShipPlacementService(private val logger: Logger,
 
         val ship = playerShipDao.save(playerId, shipType.id)
         playerShipComponentDao.save(ship.id, selectedComponentCoordinates)
+        playerShipStatusDao.save(ship.id)
 
         return ship
     }
