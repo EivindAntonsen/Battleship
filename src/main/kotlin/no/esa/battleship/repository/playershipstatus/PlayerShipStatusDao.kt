@@ -2,7 +2,11 @@ package no.esa.battleship.repository.playershipstatus
 
 import no.esa.battleship.enums.ShipStatus
 import no.esa.battleship.repository.QueryFileReader
+import no.esa.battleship.repository.ShipMapper
 import no.esa.battleship.repository.exceptions.DataAccessException
+import no.esa.battleship.repository.player.PlayerDao
+import no.esa.battleship.repository.playership.PlayerShipDao
+import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -38,6 +42,29 @@ class PlayerShipStatusDao(private val logger: Logger,
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)
+            }
+        }
+    }
+
+    override fun findAll(playerId: Int): Map<Ship, ShipStatus> {
+        val query = QueryFileReader.readSqlFile(this::class, ::findAll)
+        val parameters = MapSqlParameterSource().apply {
+            addValue(PlayerShipDao.PLAYER_ID, playerId)
+        }
+
+        return logger.log("playerId", playerId) {
+            try {
+                namedTemplate.query(query, parameters) { rs, _ ->
+                    val ship = ShipMapper.fromShipTypeIdWithParameters(
+                            rs.getInt(PlayerShipDao.PRIMARY_KEY),
+                            rs.getInt(PlayerShipDao.PLAYER_ID),
+                            rs.getInt(PlayerShipDao.SHIP_TYPE_ID))
+
+                    val shipStatus = ShipStatus.fromId(rs.getInt(SHIP_STATUS_ID))
+                    ship to shipStatus
+                }.toMap()
+            } catch (error: Exception) {
+                throw DataAccessException(this::class, ::findAll, error)
             }
         }
     }

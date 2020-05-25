@@ -6,7 +6,6 @@ import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.playertargetingmode.IPlayerTargetingModeDao
-import no.esa.battleship.repository.playertargetingmode.PlayerTargetingModeDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.shipplacement.IShipPlacementService
@@ -27,16 +26,14 @@ class GameInitializationService(private val logger: Logger,
 
     override fun initializeNewGame(gameSeriesId: UUID?): Game {
         return logger.log {
-            val game = newGame(gameSeriesId)
-
-            val player1 = newPlayer(game)
-            shipPlacementService.placeShipsForPlayer(player1.id)
-            playerTargetingModeDao.save(player1.id)
-            val player2 = newPlayer(game)
-            shipPlacementService.placeShipsForPlayer(player2.id)
-            playerTargetingModeDao.save(player2.id)
-
-            game
+            newGame(gameSeriesId).also { game ->
+                repeat(2) {
+                    newPlayer(game).also { player ->
+                        shipPlacementService.placeShipsForPlayer(player.id)
+                        playerTargetingModeDao.save(player.id)
+                    }
+                }
+            }
         }
     }
 

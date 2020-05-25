@@ -11,6 +11,8 @@ import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
 import no.esa.battleship.repository.result.IResultDao
 import no.esa.battleship.service.domain.*
+import no.esa.battleship.service.targeting.ITargetingService
+import no.esa.battleship.service.targeting.TargetingService
 import no.esa.battleship.utils.isAdjacentWith
 import org.springframework.stereotype.Service
 
@@ -22,7 +24,8 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                       private val playerShipComponentDao: IPlayerShipComponentDao,
                       private val playerTurnDao: IPlayerTurnDao,
                       private val playerStrategyDao: IPlayerStrategyDao,
-                      private val resultDao: IResultDao) : IGamePlayService {
+                      private val resultDao: IResultDao,
+                      private val targetingService: ITargetingService) : IGamePlayService {
 
     override fun playGame(gameId: Int): GameReport {
         val game = gameDao.get(gameId)
@@ -85,6 +88,8 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                                 gameTurn: Int) {
 
         if (playerFleetIsAlive(currentPlayer.id)) {
+            targetingService.getTargetCoordinate(currentPlayer.id, targetPlayer.id)
+
             val targetCoordinate = getTargetCoordinate(currentPlayer.id)
 
             getShipComponentsForPlayer(targetPlayer.id).firstOrNull { shipComponent ->
@@ -112,9 +117,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
      */
     override fun getTargetCoordinate(playerId: Int): Coordinate {
         val previousTurnsForPlayer = playerTurnDao.getPreviousTurnsForPlayer(playerId)
-
         val unavailableCoordinates = previousTurnsForPlayer.map { it.coordinate }.distinct()
-
         val availableCoordinates = coordinateDao.findAll().filter { coordinate ->
             coordinate !in unavailableCoordinates
         }
