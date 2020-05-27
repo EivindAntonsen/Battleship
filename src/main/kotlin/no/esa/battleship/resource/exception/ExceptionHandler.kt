@@ -1,6 +1,6 @@
 package no.esa.battleship.resource.exception
 
-import no.esa.battleship.exceptions.GameInitialization
+import no.esa.battleship.exceptions.GameInitializationException
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
@@ -37,8 +37,8 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
                 .body(resourceBundle.getString("dataAccessException.$callingClass.$callingFunction"))
     }
 
-    @ExceptionHandler(GameInitialization::class)
-    fun handle(exception: GameInitialization): ResponseEntity<String> {
+    @ExceptionHandler(GameInitializationException::class)
+    fun handle(exception: GameInitializationException): ResponseEntity<String> {
         exception.printStackTrace()
         logger.warn(exception.message)
 

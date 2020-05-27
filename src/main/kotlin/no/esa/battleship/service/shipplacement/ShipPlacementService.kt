@@ -4,12 +4,11 @@ import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
+import no.esa.battleship.exceptions.GameInitializationException.ShipPlacement
 import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
 import no.esa.battleship.repository.playershipstatus.IPlayerShipStatusDao
-import no.esa.battleship.repository.playershipstatus.PlayerShipStatusDao
 import no.esa.battleship.service.domain.Coordinate
 import no.esa.battleship.service.domain.Ship
 import no.esa.battleship.utils.isVerticallyAlignedWith
@@ -48,7 +47,7 @@ class ShipPlacementService(private val logger: Logger,
 
         val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinates ->
             availableCoordinates.containsAll(coordinates)
-        } ?: throw ShipPlacementException("Could not place ship: Unable to verify all found coordinates were available.")
+        } ?: throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
 
         val ship = playerShipDao.save(playerId, shipType.id)
         playerShipComponentDao.save(ship.id, selectedComponentCoordinates)
@@ -83,7 +82,7 @@ class ShipPlacementService(private val logger: Logger,
                     it isHorizontallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
-                throw ShipPlacementException("Unable to generate a list of coordinates on a $axis plane for $shipType!")
+                throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")
             }.takeIf {
                 it.size == shipType.size
             }

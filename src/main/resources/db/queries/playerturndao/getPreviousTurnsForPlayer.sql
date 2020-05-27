@@ -1,6 +1,7 @@
 select pt.id,
        game_turn,
        player_id,
+       target_player_id,
        coordinate_id,
        is_hit,
        c.y_coordinate,

@@ -1,28 +1,30 @@
 package no.esa.battleship.service.gameplay
 
+import no.esa.battleship.enums.ShipStatus.DESTROYED
+import no.esa.battleship.enums.TargetingMode.DESTROY
+import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.InvalidPerformanceException
-import no.esa.battleship.exceptions.NoValidCoordinatesException
-import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playership.IPlayerShipDao
 import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
+import no.esa.battleship.repository.playershipstatus.IPlayerShipStatusDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
+import no.esa.battleship.repository.playertargeting.IPlayerTargetingDao
 import no.esa.battleship.repository.playerturn.IPlayerTurnDao
 import no.esa.battleship.repository.result.IResultDao
 import no.esa.battleship.service.domain.*
 import no.esa.battleship.service.targeting.ITargetingService
-import no.esa.battleship.service.targeting.TargetingService
-import no.esa.battleship.utils.isAdjacentWith
 import org.springframework.stereotype.Service
 
 @Service
-class GamePlayService(private val coordinateDao: ICoordinateDao,
-                      private val playerDao: IPlayerDao,
+class GamePlayService(private val playerDao: IPlayerDao,
                       private val gameDao: IGameDao,
                       private val playerShipDao: IPlayerShipDao,
                       private val playerShipComponentDao: IPlayerShipComponentDao,
+                      private val playerShipStatusDao: IPlayerShipStatusDao,
                       private val playerTurnDao: IPlayerTurnDao,
+                      private val playerTargetingDao: IPlayerTargetingDao,
                       private val playerStrategyDao: IPlayerStrategyDao,
                       private val resultDao: IResultDao,
                       private val targetingService: ITargetingService) : IGamePlayService {
@@ -32,6 +34,9 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         val (player1, player2) = getPlayersInGame(gameId)
 
         var gameTurnId = 1
+
+        playerTargetingDao.save(player1.id, player2.id, gameTurnId)
+        playerTargetingDao.save(player2.id, player1.id, gameTurnId)
 
         do {
             executeGameTurn(player1, player2, gameTurnId)
@@ -87,19 +92,41 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
                                 targetPlayer: Player,
                                 gameTurn: Int) {
 
-        if (playerFleetIsAlive(currentPlayer.id)) {
-            targetingService.getTargetCoordinate(currentPlayer.id, targetPlayer.id)
+        val (targeting, targetedShips) = targetingService.getPlayerTargeting(currentPlayer.id)
+        val shipComponentsForCurrentPlayer = getShipComponentsForPlayer(currentPlayer.id)
+        val shipComponentsForTargetPlayer = getShipComponentsForPlayer(targetPlayer.id)
 
-            val targetCoordinate = getTargetCoordinate(currentPlayer.id)
+        if (shipComponentsForCurrentPlayer.any { !it.isDestroyed }) {
+            val targetCoordinate = targetingService.getTargetCoordinate(targeting, targetedShips)
 
-            getShipComponentsForPlayer(targetPlayer.id).firstOrNull { shipComponent ->
+            shipComponentsForTargetPlayer.firstOrNull { shipComponent ->
                 shipComponent.coordinate == targetCoordinate
             }.let { shipComponent ->
                 if (shipComponent != null) {
+                    if (targeting.targetingMode != DESTROY) {
+                        playerTargetingDao.update(currentPlayer.id, DESTROY)
+                    }
+
                     playerShipComponentDao.update(shipComponent.id, true)
+                    val allConnectedComponentsAreDestroyed = allConnectedComponentsAreDestroyed(shipComponentsForTargetPlayer,
+                                                                                                shipComponent,
+                                                                                                targetedShips)
+
+                    if (allConnectedComponentsAreDestroyed) {
+                        playerShipStatusDao.update(shipComponent.playerShipId, DESTROYED)
+                    }
+
+                    val allTargetedShipsAreDestroyed = targetedShips.flatMap {
+                        playerShipComponentDao.findByPlayerShipId(it.playerShipId)
+                    }.all { it.isDestroyed }
+
+                    if (allTargetedShipsAreDestroyed) {
+                        playerTargetingDao.update(targeting.playerId, SEEK)
+                    }
                 }
 
                 playerTurnDao.save(currentPlayer.id,
+                                   targetPlayer.id,
                                    targetCoordinate.id,
                                    shipComponent != null,
                                    gameTurn)
@@ -109,41 +136,27 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
     }
 
     /**
-     * Finds the next set of coordinates to target.
+     * Checks if targeted connecting ship components are destroyed.
      *
-     * It finds adjacent coordinates to the coordinates that have been
-     * confirmed hits. If all adjacent coordinates have been exhausted, it
-     * falls back to a random one.
+     * @param componentsForTargetPlayer contains the components to check.
+     * @param component is the component that will not be checked (is not updated yet).
+     * @param targetedShips is used to filter the list to the ones currently targeted.
+     *
+     * @return true if every ship is destroyed, otherwise false.
      */
-    override fun getTargetCoordinate(playerId: Int): Coordinate {
-        val previousTurnsForPlayer = playerTurnDao.getPreviousTurnsForPlayer(playerId)
-        val unavailableCoordinates = previousTurnsForPlayer.map { it.coordinate }.distinct()
-        val availableCoordinates = coordinateDao.findAll().filter { coordinate ->
-            coordinate !in unavailableCoordinates
-        }
-
-        val coordinatesAdjacentWithPreviousHits = previousTurnsForPlayer.filter { turn ->
-            turn.isHit
-        }.flatMap { previousHit ->
-            availableCoordinates.filter { availableCoordinate ->
-                previousHit.coordinate isAdjacentWith availableCoordinate
-            }
-        }
-
-        return when {
-            coordinatesAdjacentWithPreviousHits.isNotEmpty() -> coordinatesAdjacentWithPreviousHits
-            availableCoordinates.isNotEmpty() -> availableCoordinates
-            else -> throw NoValidCoordinatesException("No valid coordinates left for player $playerId!")
-        }.random()
+    private fun allConnectedComponentsAreDestroyed(componentsForTargetPlayer: List<Component>,
+                                                   component: Component,
+                                                   targetedShips: List<PlayerTargetedShip>): Boolean {
+        return componentsForTargetPlayer
+                .filterNot { it.id == component.id }
+                .filter {
+                    it.playerShipId in targetedShips.map { targetedShip ->
+                        targetedShip.playerShipId
+                    }
+                }.all { it.isDestroyed }
     }
 
-    private fun playerFleetIsAlive(playerId: Int): Boolean {
-        return getShipComponentsForPlayer(playerId).any { shipComponent ->
-            !shipComponent.isDestroyed
-        }
-    }
-
-    private fun getShipComponentsForPlayer(playerId: Int): List<ShipComponent> {
+    private fun getShipComponentsForPlayer(playerId: Int): List<Component> {
         return playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
             playerShipComponentDao.findByPlayerShipId(ship.id)
         }

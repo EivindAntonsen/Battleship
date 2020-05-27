@@ -5,7 +5,7 @@ import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.player.PlayerDao
 import no.esa.battleship.service.domain.Coordinate
-import no.esa.battleship.service.domain.ShipComponent
+import no.esa.battleship.service.domain.Component
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -30,7 +30,7 @@ class PlayerShipComponentDao(private val logger: Logger,
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     @Synchronized
-    override fun save(playerShipId: Int, coordinates: List<Coordinate>): List<ShipComponent> {
+    override fun save(playerShipId: Int, coordinates: List<Coordinate>): List<Component> {
         return logger.log("playerShipId", playerShipId) {
             coordinates.map { coordinate ->
                 val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
@@ -51,12 +51,12 @@ class PlayerShipComponentDao(private val logger: Logger,
                     throw DataAccessException(this::class, ::save, error)
                 }
 
-                ShipComponent(componentId, playerShipId, coordinate, false)
+                Component(componentId, playerShipId, coordinate, false)
             }
         }
     }
 
-    override fun findByGameId(gameId: Int): List<ShipComponent> {
+    override fun findByGameId(gameId: Int): List<Component> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByGameId)
         val parameters = MapSqlParameterSource().apply {
             addValue(PlayerDao.GAME_ID, gameId)
@@ -67,7 +67,7 @@ class PlayerShipComponentDao(private val logger: Logger,
         }
     }
 
-    override fun findByPlayerShipId(playerShipId: Int): List<ShipComponent> {
+    override fun findByPlayerShipId(playerShipId: Int): List<Component> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByPlayerShipId)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_SHIP_ID, playerShipId)
@@ -78,17 +78,17 @@ class PlayerShipComponentDao(private val logger: Logger,
         }
     }
 
-    fun find(query: String, parameterSource: MapSqlParameterSource): List<ShipComponent> {
+    fun find(query: String, parameterSource: MapSqlParameterSource): List<Component> {
         return try {
             namedTemplate.query(query, parameterSource) { rs, _ ->
                 val coordinateId = rs.getInt(COORDINATE_ID)
                 val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
                 val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
 
-                ShipComponent(rs.getInt(PRIMARY_KEY),
-                              rs.getInt(PLAYER_SHIP_ID),
-                              Coordinate(coordinateId, xCoordinate, yCoordinate),
-                              rs.getBoolean(IS_DESTROYED))
+                Component(rs.getInt(PRIMARY_KEY),
+                          rs.getInt(PLAYER_SHIP_ID),
+                          Coordinate(coordinateId, xCoordinate, yCoordinate),
+                          rs.getBoolean(IS_DESTROYED))
             }
         } catch (error: Exception) {
             throw DataAccessException(this::class, ::findByPlayerShipId, error)

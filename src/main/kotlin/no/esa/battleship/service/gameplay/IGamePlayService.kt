@@ -7,6 +7,5 @@ import no.esa.battleship.service.domain.Result
 
 interface IGamePlayService {
     fun playGame(gameId: Int): GameReport
-    fun getTargetCoordinate(playerId: Int): Coordinate
     fun findRemainingPlayers(gameId: Int): List<Player>
 }

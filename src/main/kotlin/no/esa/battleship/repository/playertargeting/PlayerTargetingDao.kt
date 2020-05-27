@@ -1,8 +1,9 @@
-package no.esa.battleship.repository.playertargetingmode
+package no.esa.battleship.repository.playertargeting
 
 import no.esa.battleship.enums.TargetingMode
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
+import no.esa.battleship.service.domain.PlayerTargeting
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -12,20 +13,21 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class PlayerTargetingModeDao(private val logger: Logger,
-                             private val jdbcTemplate: JdbcTemplate) : IPlayerTargetingModeDao {
+class PlayerTargetingDao(private val logger: Logger,
+                         private val jdbcTemplate: JdbcTemplate) : IPlayerTargetingDao {
 
     companion object {
         const val SCHEMA_NAME = "battleship"
-        const val TABLE_NAME = "player_targeting_mode"
+        const val TABLE_NAME = "player_targeting"
         const val PRIMARY_KEY = "id"
         const val PLAYER_ID = "player_id"
+        const val TARGET_PLAYER_ID = "target_player_id"
         const val TARGETING_MODE_ID = "targeting_mode_id"
     }
 
     private val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
-    override fun find(playerId: Int): TargetingMode {
+    override fun find(playerId: Int): PlayerTargeting {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
@@ -34,7 +36,10 @@ class PlayerTargetingModeDao(private val logger: Logger,
         return logger.log("playerId", playerId) {
             try {
                 namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    TargetingMode.fromInt(rs.getInt(TARGETING_MODE_ID))
+                    PlayerTargeting(rs.getInt(PRIMARY_KEY),
+                                    rs.getInt(PLAYER_ID),
+                                    rs.getInt(TARGET_PLAYER_ID),
+                                    TargetingMode.fromInt(rs.getInt(TARGETING_MODE_ID)))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)
@@ -60,7 +65,9 @@ class PlayerTargetingModeDao(private val logger: Logger,
     }
 
     @Synchronized
-    override fun save(playerId: Int): Int {
+    override fun save(playerId: Int,
+                      targetPlayerId: Int,
+                      gameTurnId: Int): Int {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
@@ -68,6 +75,7 @@ class PlayerTargetingModeDao(private val logger: Logger,
         }
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
+            addValue(TARGET_PLAYER_ID, targetPlayerId)
             addValue(TARGETING_MODE_ID, TargetingMode.SEEK.id)
         }
 

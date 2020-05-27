@@ -23,6 +23,7 @@ class PlayerTurnDao(private val logger: Logger,
         const val PRIMARY_KEY = "id"
         const val GAME_TURN = "game_turn"
         const val PLAYER_ID = "player_id"
+        const val TARGET_PLAYER_ID = "target_player_id"
         const val COORDINATE_ID = "coordinate_id"
         const val IS_HIT = "is_hit"
     }
@@ -31,6 +32,7 @@ class PlayerTurnDao(private val logger: Logger,
 
     @Synchronized
     override fun save(playerId: Int,
+                      targetPlayerId: Int,
                       coordinateId: Int,
                       isHit: Boolean,
                       gameTurn: Int): Int {
@@ -42,6 +44,7 @@ class PlayerTurnDao(private val logger: Logger,
 
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
+            addValue(TARGET_PLAYER_ID, targetPlayerId)
             addValue(COORDINATE_ID, coordinateId)
             addValue(GAME_TURN, gameTurn)
             addValue(IS_HIT, isHit)
@@ -72,6 +75,7 @@ class PlayerTurnDao(private val logger: Logger,
                     PlayerTurn(rs.getInt(PRIMARY_KEY),
                                rs.getInt(GAME_TURN),
                                rs.getInt(PLAYER_ID),
+                               rs.getInt(TARGET_PLAYER_ID),
                                coordinate,
                                rs.getBoolean(IS_HIT))
                 }

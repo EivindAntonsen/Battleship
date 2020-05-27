@@ -1,11 +1,11 @@
 package no.esa.battleship.service.initialization
 
 import no.esa.battleship.enums.Strategy
-import no.esa.battleship.exceptions.GameInitialization.TooManyPlayersException
+import no.esa.battleship.exceptions.GameInitializationException.TooManyPlayers
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
-import no.esa.battleship.repository.playertargetingmode.IPlayerTargetingModeDao
+import no.esa.battleship.repository.playertargeting.IPlayerTargetingDao
 import no.esa.battleship.service.domain.Game
 import no.esa.battleship.service.domain.Player
 import no.esa.battleship.service.shipplacement.IShipPlacementService
@@ -20,7 +20,7 @@ class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
                                 private val shipPlacementService: IShipPlacementService,
-                                private val playerTargetingModeDao: IPlayerTargetingModeDao,
+                                private val playerTargetingModeDao: IPlayerTargetingDao,
                                 private val playerStrategyDao: IPlayerStrategyDao)
     : IGameInitializationService {
 
@@ -30,7 +30,6 @@ class GameInitializationService(private val logger: Logger,
                 repeat(2) {
                     newPlayer(game).also { player ->
                         shipPlacementService.placeShipsForPlayer(player.id)
-                        playerTargetingModeDao.save(player.id)
                     }
                 }
             }
@@ -55,6 +54,6 @@ class GameInitializationService(private val logger: Logger,
             playerStrategyDao.save(playerId, strategy)
 
             Player(playerId, game.id)
-        } else throw TooManyPlayersException(game.id)
+        } else throw TooManyPlayers(game.id)
     }
 }
