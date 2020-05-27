@@ -1,14 +1,14 @@
 package no.esa.battleship.repository
 
 import no.esa.battleship.exceptions.NoSuchShipTypeException
-import no.esa.battleship.service.domain.Ship
-import no.esa.battleship.service.domain.Ship.*
+import no.esa.battleship.repository.entity.ShipEntity
+import no.esa.battleship.repository.entity.ShipEntity.*
 
 object ShipMapper {
 
     fun fromShipTypeIdWithParameters(id: Int,
                                      playerId: Int,
-                                     shipTypeId: Int): Ship {
+                                     shipTypeId: Int): ShipEntity {
         return when (shipTypeId) {
             1 -> Carrier(id, playerId)
             2 -> Battleship(id, playerId)

@@ -1,4 +1,4 @@
-create table if not exists battleship.player_turn
+create table if not exists battleship.turn
 (
     id               serial primary key,
     game_turn        int     not null,

@@ -1,6 +1,6 @@
 package no.esa.battleship.utils
 
-import no.esa.battleship.service.domain.Coordinate
+import no.esa.battleship.repository.entity.CoordinateEntity
 import org.slf4j.Logger
 
 const val STRING_MAX_LENGTH = 100
@@ -39,15 +39,15 @@ fun <R> Logger.log(identifier: String? = null,
     return response
 }
 
-infix fun Coordinate.isVerticallyAlignedWith(that: Coordinate): Boolean {
+infix fun CoordinateEntity.isVerticallyAlignedWith(that: CoordinateEntity): Boolean {
     return this.horizontal_position == that.horizontal_position
 }
 
-infix fun Coordinate.isHorizontallyAlignedWith(that: Coordinate): Boolean {
+infix fun CoordinateEntity.isHorizontallyAlignedWith(that: CoordinateEntity): Boolean {
     return this.vertical_position == that.vertical_position
 }
 
-infix fun Coordinate.isAdjacentWith(that: Coordinate): Boolean {
+infix fun CoordinateEntity.isAdjacentWith(that: CoordinateEntity): Boolean {
     return (this isHorizontallyAlignedWith that &&
             this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 1)) ||
             (this isVerticallyAlignedWith that && this.vertical_position - that.vertical_position in listOf(-1, 1))

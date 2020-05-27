@@ -6,25 +6,28 @@ import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.InvalidPerformanceException
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
-import no.esa.battleship.repository.playership.IPlayerShipDao
-import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
-import no.esa.battleship.repository.playershipstatus.IPlayerShipStatusDao
+import no.esa.battleship.repository.ship.IShipDao
+import no.esa.battleship.repository.component.IComponentDao
+import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
-import no.esa.battleship.repository.playertargeting.IPlayerTargetingDao
-import no.esa.battleship.repository.playerturn.IPlayerTurnDao
+import no.esa.battleship.repository.targeting.ITargetingDao
+import no.esa.battleship.repository.turn.ITurnDao
 import no.esa.battleship.repository.result.IResultDao
 import no.esa.battleship.service.domain.*
+import no.esa.battleship.repository.entity.ComponentEntity
+import no.esa.battleship.repository.entity.PlayerEntity
+import no.esa.battleship.repository.entity.TargetedShipEntity
 import no.esa.battleship.service.targeting.ITargetingService
 import org.springframework.stereotype.Service
 
 @Service
 class GamePlayService(private val playerDao: IPlayerDao,
                       private val gameDao: IGameDao,
-                      private val playerShipDao: IPlayerShipDao,
-                      private val playerShipComponentDao: IPlayerShipComponentDao,
-                      private val playerShipStatusDao: IPlayerShipStatusDao,
-                      private val playerTurnDao: IPlayerTurnDao,
-                      private val playerTargetingDao: IPlayerTargetingDao,
+                      private val shipDao: IShipDao,
+                      private val componentDao: IComponentDao,
+                      private val shipStatusDao: IShipStatusDao,
+                      private val turnDao: ITurnDao,
+                      private val targetingDao: ITargetingDao,
                       private val playerStrategyDao: IPlayerStrategyDao,
                       private val resultDao: IResultDao,
                       private val targetingService: ITargetingService) : IGamePlayService {
@@ -35,8 +38,8 @@ class GamePlayService(private val playerDao: IPlayerDao,
 
         var gameTurnId = 1
 
-        playerTargetingDao.save(player1.id, player2.id, gameTurnId)
-        playerTargetingDao.save(player2.id, player1.id, gameTurnId)
+        targetingDao.save(player1.id, player2.id, gameTurnId)
+        targetingDao.save(player2.id, player1.id, gameTurnId)
 
         do {
             executeGameTurn(player1, player2, gameTurnId)
@@ -66,103 +69,103 @@ class GamePlayService(private val playerDao: IPlayerDao,
                           resultDao.save(gameId, winningPlayer?.id))
     }
 
-    private fun getPerformanceAnalysis(player: Player): PerformanceAnalysis {
-        val previousTurns = playerTurnDao.getPreviousTurnsForPlayer(player.id)
+    private fun getPerformanceAnalysis(playerEntity: PlayerEntity): PerformanceAnalysis {
+        val previousTurns = turnDao.getPreviousTurnsForPlayer(playerEntity.id)
 
         val hitCount = previousTurns.filter { it.isHit }.count()
         val missCount = previousTurns.filterNot { it.isHit }.count()
         val totalCount = hitCount + missCount
 
-        if (totalCount == 0) throw InvalidPerformanceException(player.id)
+        if (totalCount == 0) throw InvalidPerformanceException(playerEntity.id)
 
         val hitRate = hitCount.toDouble() / totalCount.toDouble()
 
-        return PerformanceAnalysis(player, totalCount, hitCount, missCount, hitRate)
+        return PerformanceAnalysis(playerEntity, totalCount, hitCount, missCount, hitRate)
     }
 
-    override fun findRemainingPlayers(gameId: Int): List<Player> {
-        return playerShipComponentDao.findByGameId(gameId).map { shipComponent ->
-            val ship = playerShipDao.find(shipComponent.playerShipId)
+    override fun findRemainingPlayers(gameId: Int): List<PlayerEntity> {
+        return componentDao.findByGameId(gameId).map { shipComponent ->
+            val ship = shipDao.find(shipComponent.shipId)
 
             playerDao.find(ship.playerId)
         }.distinct()
     }
 
-    private fun executeGameTurn(currentPlayer: Player,
-                                targetPlayer: Player,
+    private fun executeGameTurn(currentPlayerEntity: PlayerEntity,
+                                targetPlayerEntity: PlayerEntity,
                                 gameTurn: Int) {
 
-        val (targeting, targetedShips) = targetingService.getPlayerTargeting(currentPlayer.id)
-        val shipComponentsForCurrentPlayer = getShipComponentsForPlayer(currentPlayer.id)
-        val shipComponentsForTargetPlayer = getShipComponentsForPlayer(targetPlayer.id)
+        val (targeting, targetedShips) = targetingService.getPlayerTargeting(currentPlayerEntity.id)
+        val shipComponentsForCurrentPlayer = getShipComponentsForPlayer(currentPlayerEntity.id)
+        val shipComponentsForTargetPlayer = getShipComponentsForPlayer(targetPlayerEntity.id)
 
         if (shipComponentsForCurrentPlayer.any { !it.isDestroyed }) {
             val targetCoordinate = targetingService.getTargetCoordinate(targeting, targetedShips)
 
             shipComponentsForTargetPlayer.firstOrNull { shipComponent ->
-                shipComponent.coordinate == targetCoordinate
+                shipComponent.coordinateEntity == targetCoordinate
             }.let { shipComponent ->
                 if (shipComponent != null) {
                     if (targeting.targetingMode != DESTROY) {
-                        playerTargetingDao.update(currentPlayer.id, DESTROY)
+                        targetingDao.update(currentPlayerEntity.id, DESTROY)
                     }
 
-                    playerShipComponentDao.update(shipComponent.id, true)
+                    componentDao.update(shipComponent.id, true)
                     val allConnectedComponentsAreDestroyed = allConnectedComponentsAreDestroyed(shipComponentsForTargetPlayer,
                                                                                                 shipComponent,
                                                                                                 targetedShips)
 
                     if (allConnectedComponentsAreDestroyed) {
-                        playerShipStatusDao.update(shipComponent.playerShipId, DESTROYED)
+                        shipStatusDao.update(shipComponent.shipId, DESTROYED)
                     }
 
                     val allTargetedShipsAreDestroyed = targetedShips.flatMap {
-                        playerShipComponentDao.findByPlayerShipId(it.playerShipId)
+                        componentDao.findByPlayerShipId(it.shipId)
                     }.all { it.isDestroyed }
 
                     if (allTargetedShipsAreDestroyed) {
-                        playerTargetingDao.update(targeting.playerId, SEEK)
+                        targetingDao.update(targeting.playerId, SEEK)
                     }
                 }
 
-                playerTurnDao.save(currentPlayer.id,
-                                   targetPlayer.id,
-                                   targetCoordinate.id,
-                                   shipComponent != null,
-                                   gameTurn)
+                turnDao.save(currentPlayerEntity.id,
+                             targetPlayerEntity.id,
+                             targetCoordinate.id,
+                             shipComponent != null,
+                             gameTurn)
             }
 
-        } else gameDao.conclude(currentPlayer.gameId)
+        } else gameDao.conclude(currentPlayerEntity.gameId)
     }
 
     /**
      * Checks if targeted connecting ship components are destroyed.
      *
      * @param componentsForTargetPlayer contains the components to check.
-     * @param component is the component that will not be checked (is not updated yet).
-     * @param targetedShips is used to filter the list to the ones currently targeted.
+     * @param componentEntity is the component that will not be checked (is not updated yet).
+     * @param targetedShipEntities is used to filter the list to the ones currently targeted.
      *
      * @return true if every ship is destroyed, otherwise false.
      */
-    private fun allConnectedComponentsAreDestroyed(componentsForTargetPlayer: List<Component>,
-                                                   component: Component,
-                                                   targetedShips: List<PlayerTargetedShip>): Boolean {
+    private fun allConnectedComponentsAreDestroyed(componentsForTargetPlayer: List<ComponentEntity>,
+                                                   componentEntity: ComponentEntity,
+                                                   targetedShipEntities: List<TargetedShipEntity>): Boolean {
         return componentsForTargetPlayer
-                .filterNot { it.id == component.id }
+                .filterNot { it.id == componentEntity.id }
                 .filter {
-                    it.playerShipId in targetedShips.map { targetedShip ->
-                        targetedShip.playerShipId
+                    it.shipId in targetedShipEntities.map { targetedShip ->
+                        targetedShip.shipId
                     }
                 }.all { it.isDestroyed }
     }
 
-    private fun getShipComponentsForPlayer(playerId: Int): List<Component> {
-        return playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
-            playerShipComponentDao.findByPlayerShipId(ship.id)
+    private fun getShipComponentsForPlayer(playerId: Int): List<ComponentEntity> {
+        return shipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
+            componentDao.findByPlayerShipId(ship.id)
         }
     }
 
-    private fun getPlayersInGame(gameId: Int): Pair<Player, Player> {
+    private fun getPlayersInGame(gameId: Int): Pair<PlayerEntity, PlayerEntity> {
         return playerDao.findPlayersInGame(gameId).run {
             first() to last()
         }

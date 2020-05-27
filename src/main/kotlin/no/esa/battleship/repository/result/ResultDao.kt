@@ -2,7 +2,7 @@ package no.esa.battleship.repository.result
 
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.service.domain.Result
+import no.esa.battleship.repository.entity.ResultEntity
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -26,7 +26,7 @@ class ResultDao(private val logger: Logger,
     private val namedParameterJdbcTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     @Synchronized
-    override fun save(gameId: Int, winningPlayerId: Int?): Result {
+    override fun save(gameId: Int, winningPlayerId: Int?): ResultEntity {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
@@ -43,14 +43,14 @@ class ResultDao(private val logger: Logger,
             try {
                 val id = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
-                Result(id, gameId, winningPlayerId)
+                ResultEntity(id, gameId, winningPlayerId)
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::save, error)
             }
         }
     }
 
-    override fun get(gameId: Int): Result {
+    override fun get(gameId: Int): ResultEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
@@ -59,9 +59,9 @@ class ResultDao(private val logger: Logger,
         return logger.log("gameId", gameId) {
             try {
                 namedParameterJdbcTemplate.queryForObject(query, parameters) { rs, _ ->
-                    Result(rs.getInt(PRIMARY_KEY),
-                           rs.getInt(GAME_ID),
-                           rs.getInt(WINNING_PLAYER_ID))
+                    ResultEntity(rs.getInt(PRIMARY_KEY),
+                                 rs.getInt(GAME_ID),
+                                 rs.getInt(WINNING_PLAYER_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::get, error)
@@ -75,9 +75,9 @@ class ResultDao(private val logger: Logger,
         return logger.log {
             try {
                 jdbcTemplate.query(query) { rs, _ ->
-                    Result(rs.getInt(PRIMARY_KEY),
-                           rs.getInt(GAME_ID),
-                           rs.getInt(WINNING_PLAYER_ID))
+                    ResultEntity(rs.getInt(PRIMARY_KEY),
+                                 rs.getInt(GAME_ID),
+                                 rs.getInt(WINNING_PLAYER_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::getAll, error)

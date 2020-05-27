@@ -2,7 +2,7 @@ package no.esa.battleship.repository.player
 
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.service.domain.Player
+import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -45,7 +45,7 @@ class PlayerDao(private val logger: Logger,
         }
     }
 
-    override fun find(playerId: Int): Player {
+    override fun find(playerId: Int): PlayerEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, playerId)
@@ -54,7 +54,7 @@ class PlayerDao(private val logger: Logger,
         return logger.log("playerId", playerId) {
             try {
                 namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
+                    PlayerEntity(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)
@@ -63,7 +63,7 @@ class PlayerDao(private val logger: Logger,
 
     }
 
-    override fun findPlayersInGame(gameId: Int): List<Player> {
+    override fun findPlayersInGame(gameId: Int): List<PlayerEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findPlayersInGame)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
@@ -72,7 +72,7 @@ class PlayerDao(private val logger: Logger,
         return logger.log("gameId", gameId) {
             try {
                 namedTemplate.query(query, parameters) { rs, _ ->
-                    Player(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
+                    PlayerEntity(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::findPlayersInGame, error)

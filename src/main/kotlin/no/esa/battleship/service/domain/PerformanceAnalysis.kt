@@ -1,7 +1,9 @@
 package no.esa.battleship.service.domain
 
-data class PerformanceAnalysis(val player: Player,
+import no.esa.battleship.repository.entity.PlayerEntity
+
+data class PerformanceAnalysis(val playerEntity: PlayerEntity,
                                val shotsFired: Int,
                                val hits: Int,
                                val misses: Int,
-                               val hitrate: Double)
+                               val hitRate: Double)

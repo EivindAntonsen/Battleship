@@ -1,7 +1,7 @@
 package no.esa.battleship.exceptions
 
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.service.domain.Coordinate
+import no.esa.battleship.repository.entity.CoordinateEntity
 
 sealed class ComponentsException(message: String) : RuntimeException(message) {
 
@@ -15,5 +15,5 @@ sealed class ComponentsException(message: String) : RuntimeException(message) {
                                                                              "for ship of type $shipType: " +
                                                                              "Needs to be exactly ${shipType.size}!")
 
-    class IntegrityViolation(c1: Coordinate, c2: Coordinate) : ComponentsException("Coordinates aren't adjacent: $c1 $c2")
+    class IntegrityViolation(c1: CoordinateEntity, c2: CoordinateEntity) : ComponentsException("Coordinates aren't adjacent: $c1 $c2")
 }

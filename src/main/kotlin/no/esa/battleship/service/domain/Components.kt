@@ -5,26 +5,27 @@ import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.exceptions.ComponentsException.*
+import no.esa.battleship.repository.entity.ComponentEntity
+import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.utils.isAdjacentWith
 import java.util.Optional.empty
 import java.util.Optional.of
 
 data class Components(private val shipType: ShipType,
-                      private val components: List<Component>) : Iterable<Component> {
+                      private val componentEntities: List<ComponentEntity>) : Iterable<ComponentEntity> {
 
     init {
-        fun verifySize(components: List<Component>) {
-            if (components.size == shipType.size) return
-            else throw Composition(shipType, components.size)
+        fun verifySize(componentEntities: List<ComponentEntity>) {
+            if (componentEntities.size != shipType.size) throw Composition(shipType, componentEntities.size)
         }
 
-        fun verifyIntegrity(components: List<Component>) {
-            components.map { it.coordinate }.sortedBy { coordinate ->
-                when (getAxis(components)) {
+        fun verifyIntegrity(componentEntities: List<ComponentEntity>) {
+            componentEntities.map { it.coordinateEntity }.sortedBy { coordinate ->
+                when (getAxis(componentEntities)) {
                     HORIZONTAL -> coordinate.horizontalPositionAsInt()
                     VERTICAL -> coordinate.vertical_position
                 }
-            }.fold(empty<Coordinate>()) { acc, coordinate ->
+            }.fold(empty<CoordinateEntity>()) { acc, coordinate ->
                 when {
                     acc.isEmpty -> of(coordinate)
                     acc.isPresent && acc.get() isAdjacentWith coordinate -> of(coordinate)
@@ -33,16 +34,16 @@ data class Components(private val shipType: ShipType,
             }
         }
 
-        verifySize(components)
-        verifyIntegrity(components)
+        verifySize(componentEntities)
+        verifyIntegrity(componentEntities)
     }
 
-    fun getAxis(components: List<Component>): Axis {
-        val verticalSpan = components.map {
-            it.coordinate.vertical_position
+    fun getAxis(componentEntities: List<ComponentEntity>): Axis {
+        val verticalSpan = componentEntities.map {
+            it.coordinateEntity.vertical_position
         }.distinct().size
-        val horizontalSpan = components.map {
-            it.coordinate.horizontal_position
+        val horizontalSpan = componentEntities.map {
+            it.coordinateEntity.horizontal_position
         }.distinct().size
 
         return when {
@@ -52,8 +53,8 @@ data class Components(private val shipType: ShipType,
         }
     }
 
-    override fun iterator(): Iterator<Component> {
-        return components.iterator()
+    override fun iterator(): Iterator<ComponentEntity> {
+        return componentEntities.iterator()
     }
 
     fun shipTypeId(): Int {

@@ -3,7 +3,7 @@ package no.esa.battleship.repository.game
 import no.esa.battleship.exceptions.NoSuchGameException
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.service.domain.Game
+import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -30,7 +30,7 @@ class GameDao(private val logger: Logger,
         const val IS_CONCLUDED = "is_concluded"
     }
 
-    override fun get(gameId: Int): Game {
+    override fun get(gameId: Int): GameEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, gameId)
@@ -45,7 +45,7 @@ class GameDao(private val logger: Logger,
                         UUID.fromString(it)
                     }
 
-                    Game(gameId, dateTime, gameSeriesId, isConcluded)
+                    GameEntity(gameId, dateTime, gameSeriesId, isConcluded)
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::get, error)
@@ -93,7 +93,7 @@ class GameDao(private val logger: Logger,
         }
     }
 
-    override fun findGamesInSeries(gameSeriesId: UUID): List<Game> {
+    override fun findGamesInSeries(gameSeriesId: UUID): List<GameEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findGamesInSeries)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_SERIES_ID, gameSeriesId)
@@ -106,7 +106,7 @@ class GameDao(private val logger: Logger,
                     val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
                     val isConcluded = rs.getBoolean(IS_CONCLUDED)
 
-                    Game(gameId, dateTime, gameSeriesId, isConcluded)
+                    GameEntity(gameId, dateTime, gameSeriesId, isConcluded)
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::findGamesInSeries, error)

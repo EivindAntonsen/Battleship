@@ -1,13 +1,12 @@
 package no.esa.battleship.service.targeting
 
-import no.esa.battleship.enums.TargetingMode
-import no.esa.battleship.service.domain.Coordinate
-import no.esa.battleship.service.domain.PlayerTargetedShip
-import no.esa.battleship.service.domain.PlayerTargeting
+import no.esa.battleship.repository.entity.CoordinateEntity
+import no.esa.battleship.repository.entity.TargetedShipEntity
+import no.esa.battleship.repository.entity.TargetingEntity
 
 interface ITargetingService {
-    fun getTargetCoordinate(targeting: PlayerTargeting,
-                            targetedShips: List<PlayerTargetedShip>): Coordinate
+    fun getTargetCoordinate(targetingEntity: TargetingEntity,
+                            targetedShipEntities: List<TargetedShipEntity>): CoordinateEntity
 
-    fun getPlayerTargeting(playerId: Int): Pair<PlayerTargeting, List<PlayerTargetedShip>>
+    fun getPlayerTargeting(playerId: Int): Pair<TargetingEntity, List<TargetedShipEntity>>
 }

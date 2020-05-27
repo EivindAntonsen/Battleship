@@ -1,8 +1,8 @@
 package no.esa.battleship.service.initialization
 
-import no.esa.battleship.service.domain.Game
+import no.esa.battleship.repository.entity.GameEntity
 import java.util.*
 
 interface IGameInitializationService {
-    fun initializeNewGame(gameSeriesId: UUID?): Game
+    fun initializeNewGame(gameSeriesId: UUID?): GameEntity
 }

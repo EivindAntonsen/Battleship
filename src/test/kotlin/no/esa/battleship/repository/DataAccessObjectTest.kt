@@ -11,8 +11,8 @@ import no.esa.battleship.enums.Strategy
 import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.game.GameDao
 import no.esa.battleship.repository.player.PlayerDao
-import no.esa.battleship.repository.playership.PlayerShipDao
-import no.esa.battleship.repository.playershipcomponent.PlayerShipComponentDao
+import no.esa.battleship.repository.ship.ShipDao
+import no.esa.battleship.repository.component.ComponentDao
 import no.esa.battleship.repository.playerstrategy.PlayerStrategyDao
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -26,8 +26,8 @@ internal class DataAccessObjectTest {
     private val gameDao = GameDao(logger, TestConfig.jdbcTemplate)
     private val coordinateDao = CoordinateDao(logger, TestConfig.jdbcTemplate)
     private val playerDao = PlayerDao(logger, TestConfig.jdbcTemplate)
-    private val playerShipComponentDao = PlayerShipComponentDao(logger, TestConfig.jdbcTemplate)
-    private val playerShipDao = PlayerShipDao(logger, TestConfig.jdbcTemplate)
+    private val playerShipComponentDao = ComponentDao(logger, TestConfig.jdbcTemplate)
+    private val playerShipDao = ShipDao(logger, TestConfig.jdbcTemplate)
     private val playerStrategyDao = PlayerStrategyDao(logger, TestConfig.jdbcTemplate)
 
     @BeforeEach
@@ -38,7 +38,7 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class CoordinateTests {
+    inner class CoordinateDaoTests {
         @Test
         fun `findAll should return a list of 100 coordinates`() {
             assert(coordinateDao.findAll().size == 100)
@@ -46,7 +46,7 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class GameTests {
+    inner class GameDaoTests {
         @Test
         fun `save should create a row that can be retrieved by its game id`() {
             val datetime = LocalDateTime.now()
@@ -74,7 +74,7 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class PlayerTests {
+    inner class PlayerDaoTests {
         @Test
         fun `find should find a player that belongs to a game`() {
             val player = playerDao.find(TestData.playerOneId)
@@ -99,12 +99,12 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class ComponentTests {
+    inner class ComponentDaoTests {
         @Test
         fun `findByPlayerShipId should return a list of components`() {
             val components = playerShipComponentDao.findByPlayerShipId(1)
             val componentsSharePlayerShipId = components.map {
-                it.playerShipId
+                it.shipId
             }.distinct().size == 1
 
             assert(components.isNotEmpty() && componentsSharePlayerShipId)
@@ -126,7 +126,7 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class PlayerShipTests {
+    inner class ShipDaoTests {
         @Test
         fun `find should retrieve a ship by its id`() {
             val ship = playerShipDao.find(1)
@@ -150,7 +150,7 @@ internal class DataAccessObjectTest {
     }
 
     @Nested
-    inner class PlayerStrategyTests {
+    inner class PlayerStrategyDaoTests {
         @Test
         fun `find should retrieve an existing player strategy entry`() {
             val strategy = playerStrategyDao.find(TestData.playerOneId)

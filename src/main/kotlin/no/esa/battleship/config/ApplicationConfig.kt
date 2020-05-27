@@ -36,8 +36,7 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties,
                 .table("schema_version")
                 .load()
 
-        if (environment.activeProfiles.contains("dev")) flyway.clean()
-
+        flyway.clean()
         flyway.migrate()
 
         return flyway

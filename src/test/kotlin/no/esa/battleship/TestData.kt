@@ -1,7 +1,7 @@
 package no.esa.battleship
 
-import no.esa.battleship.service.domain.Game
-import no.esa.battleship.service.domain.Player
+import no.esa.battleship.repository.entity.GameEntity
+import no.esa.battleship.repository.entity.PlayerEntity
 import java.time.LocalDateTime
 
 object TestData {
@@ -14,16 +14,18 @@ object TestData {
     val playersInTestGame = listOf(player(playerOneId, gameId),
                                    player(playerTwoId, gameId))
 
-    fun game(id: Int): Game {
-        return Game(id,
-                    LocalDateTime.of(2020,
-                                     1,
-                                     1,
-                                     0,
-                                     0),
-                    null,
-                    false)
+    fun game(id: Int): GameEntity {
+        return GameEntity(id,
+                          LocalDateTime.of(2020,
+                                                                                         1,
+                                                                                         1,
+                                                                                         0,
+                                                                                         0),
+                          null,
+                          false)
     }
 
-    fun player(id: Int = 1, gameId: Int = 1): Player = Player(id, gameId)
+    fun player(id: Int = 1, gameId: Int = 1): PlayerEntity = PlayerEntity(
+            id,
+            gameId)
 }
