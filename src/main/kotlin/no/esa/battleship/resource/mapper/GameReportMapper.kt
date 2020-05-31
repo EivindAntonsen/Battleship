@@ -1,7 +1,10 @@
 package no.esa.battleship.resource.mapper
 
+import battleship.model.Game
+import battleship.model.GameReportDTO
+import battleship.model.PerformanceAnalysis
+import battleship.model.Player
 import no.esa.battleship.enums.Strategy
-import no.esa.battleship.model.*
 import no.esa.battleship.service.domain.GameReport
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -10,7 +13,7 @@ object GameReportMapper {
 
     fun toDTO(gameReport: GameReport): GameReportDTO {
         val game = getGame(gameReport)
-        val result = Result(game, gameReport.resultEntity.winningPlayerId)
+        val result = battleship.model.Result(game, gameReport.resultEntity.winningPlayerId)
         val playerPerformance = getPlayerPerformance(gameReport)
 
         return GameReportDTO(result, playerPerformance)

@@ -1,7 +1,7 @@
 package no.esa.battleship.resource.game
 
-import no.esa.battleship.api.GameApi
-import no.esa.battleship.model.GameReportDTO
+import battleship.api.GameApi
+import battleship.model.GameReportDTO
 import no.esa.battleship.resource.mapper.GameReportMapper
 import no.esa.battleship.service.gameplay.IGamePlayService
 import no.esa.battleship.service.initialization.IGameInitializationService

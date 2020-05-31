@@ -5,45 +5,39 @@ import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.exceptions.ComponentsException.*
-import no.esa.battleship.repository.entity.ComponentEntity
-import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.utils.isAdjacentWith
-import java.util.Optional.empty
-import java.util.Optional.of
 
 data class Components(private val shipType: ShipType,
-                      private val componentEntities: List<ComponentEntity>) : Iterable<ComponentEntity> {
+                      private val components: List<Component>) : Iterable<Component> {
 
     init {
-        fun verifySize(componentEntities: List<ComponentEntity>) {
-            if (componentEntities.size != shipType.size) throw Composition(shipType, componentEntities.size)
+
+        fun verifySize(components: List<Component>) {
+            if (components.size != shipType.size) throw Composition(shipType, components.size)
         }
 
-        fun verifyIntegrity(componentEntities: List<ComponentEntity>) {
-            componentEntities.map { it.coordinateEntity }.sortedBy { coordinate ->
-                when (getAxis(componentEntities)) {
-                    HORIZONTAL -> coordinate.horizontalPositionAsInt()
-                    VERTICAL -> coordinate.vertical_position
+        fun verifyIntegrity(components: List<Component>) {
+            components.map { it.coordinate }.sortedBy { coordinate ->
+                when (getAxis(components)) {
+                    HORIZONTAL -> coordinate.xAsInt()
+                    VERTICAL -> coordinate.y
                 }
-            }.fold(empty<CoordinateEntity>()) { acc, coordinate ->
-                when {
-                    acc.isEmpty -> of(coordinate)
-                    acc.isPresent && acc.get() isAdjacentWith coordinate -> of(coordinate)
-                    else -> throw IntegrityViolation (acc.get(), coordinate)
-                }
+            }.reduce { acc, coordinate ->
+                if (acc isAdjacentWith coordinate) coordinate
+                else throw IntegrityViolation(acc, coordinate)
             }
         }
 
-        verifySize(componentEntities)
-        verifyIntegrity(componentEntities)
+        verifySize(components)
+        verifyIntegrity(components)
     }
 
-    fun getAxis(componentEntities: List<ComponentEntity>): Axis {
-        val verticalSpan = componentEntities.map {
-            it.coordinateEntity.vertical_position
+    fun getAxis(components: List<Component>): Axis {
+        val verticalSpan = components.map {
+            it.coordinate.y
         }.distinct().size
-        val horizontalSpan = componentEntities.map {
-            it.coordinateEntity.horizontal_position
+        val horizontalSpan = components.map {
+            it.coordinate.xAsInt()
         }.distinct().size
 
         return when {
@@ -53,8 +47,8 @@ data class Components(private val shipType: ShipType,
         }
     }
 
-    override fun iterator(): Iterator<ComponentEntity> {
-        return componentEntities.iterator()
+    override fun iterator(): Iterator<Component> {
+        return components.iterator()
     }
 
     fun shipTypeId(): Int {

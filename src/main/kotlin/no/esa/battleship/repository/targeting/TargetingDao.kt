@@ -2,8 +2,8 @@ package no.esa.battleship.repository.targeting
 
 import no.esa.battleship.enums.TargetingMode
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.entity.TargetingEntity
+import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
@@ -39,8 +39,7 @@ class TargetingDao(private val logger: Logger,
                     TargetingEntity(rs.getInt(PRIMARY_KEY),
                                     rs.getInt(PLAYER_ID),
                                     rs.getInt(TARGET_PLAYER_ID),
-                                    TargetingMode.fromInt(rs.getInt(
-                                                                                          TARGETING_MODE_ID)))
+                                    rs.getInt(TARGETING_MODE_ID))
                 }
             } catch (error: Exception) {
                 throw DataAccessException(this::class, ::find, error)

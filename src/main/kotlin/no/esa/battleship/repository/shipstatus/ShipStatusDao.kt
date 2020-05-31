@@ -2,7 +2,7 @@ package no.esa.battleship.repository.shipstatus
 
 import no.esa.battleship.enums.ShipStatus
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.ShipMapper
+import no.esa.battleship.repository.mapper.ShipMapper
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.ship.ShipDao
 import no.esa.battleship.repository.entity.ShipEntity

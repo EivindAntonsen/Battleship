@@ -87,7 +87,7 @@ dependencies {
 tasks {
     create<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("buildKotlinClient") {
         val generationPath = "$buildDir/generated-sources"
-        val basePackage = "no.esa.battleship"
+        val basePackage = "battleship"
 
         delete(generationPath)
         generatorName.set("kotlin-spring")
@@ -95,14 +95,14 @@ tasks {
         outputDir.set(generationPath)
         apiPackage.set("$basePackage.api")
         modelPackage.set("$basePackage.model")
+        configOptions.set(mapOf(
+                "dateLibrary" to "java8",
+                "swaggerAnnotations" to "true",
+                "interfaceOnly" to "true"))
         systemProperties.set(mapOf(
                 "apis" to "",
                 "models" to "",
                 "supportingFiles" to "false"))
-        configOptions.set(mapOf(
-                "interfaceOnly" to "true",
-                "dateLibrary" to "java8",
-                "swaggerAnnotations" to "true"))
     }
 
     withType<KotlinCompile> {

@@ -1,22 +1,24 @@
 package no.esa.battleship.service.gameplay
 
 import no.esa.battleship.enums.ShipStatus.DESTROYED
+import no.esa.battleship.enums.ShipType
 import no.esa.battleship.enums.TargetingMode.DESTROY
 import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.InvalidPerformanceException
-import no.esa.battleship.repository.game.IGameDao
-import no.esa.battleship.repository.player.IPlayerDao
-import no.esa.battleship.repository.ship.IShipDao
 import no.esa.battleship.repository.component.IComponentDao
-import no.esa.battleship.repository.shipstatus.IShipStatusDao
-import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
-import no.esa.battleship.repository.targeting.ITargetingDao
-import no.esa.battleship.repository.turn.ITurnDao
-import no.esa.battleship.repository.result.IResultDao
-import no.esa.battleship.service.domain.*
 import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.entity.TargetedShipEntity
+import no.esa.battleship.repository.game.IGameDao
+import no.esa.battleship.repository.mapper.CoordinateMapper
+import no.esa.battleship.repository.player.IPlayerDao
+import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
+import no.esa.battleship.repository.result.IResultDao
+import no.esa.battleship.repository.ship.IShipDao
+import no.esa.battleship.repository.shipstatus.IShipStatusDao
+import no.esa.battleship.repository.targeting.ITargetingDao
+import no.esa.battleship.repository.turn.ITurnDao
+import no.esa.battleship.service.domain.*
 import no.esa.battleship.service.targeting.ITargetingService
 import org.springframework.stereotype.Service
 
@@ -95,47 +97,78 @@ class GamePlayService(private val playerDao: IPlayerDao,
                                 targetPlayerEntity: PlayerEntity,
                                 gameTurn: Int) {
 
-        val (targeting, targetedShips) = targetingService.getPlayerTargeting(currentPlayerEntity.id)
-        val shipComponentsForCurrentPlayer = getShipComponentsForPlayer(currentPlayerEntity.id)
-        val shipComponentsForTargetPlayer = getShipComponentsForPlayer(targetPlayerEntity.id)
+        val shipsForCurrentPlayer = getShipsForPlayer(currentPlayerEntity.id)
+        val shipsForTargetPlayer = getShipsForPlayer(targetPlayerEntity.id)
+        val atLeastOneComponentRemains = shipsForCurrentPlayer.any { ship ->
+            ship.components.any { component ->
+                !component.isDestroyed
+            }
+        }
 
-        if (shipComponentsForCurrentPlayer.any { !it.isDestroyed }) {
-            val targetCoordinate = targetingService.getTargetCoordinate(targeting, targetedShips)
+        if (atLeastOneComponentRemains) {
+            val targeting = targetingService.getTargeting(currentPlayerEntity.id)
+            val targetCoordinate = targetingService.getTargetCoordinate(targeting)
 
-            shipComponentsForTargetPlayer.firstOrNull { shipComponent ->
-                shipComponent.coordinateEntity == targetCoordinate
-            }.let { shipComponent ->
-                if (shipComponent != null) {
+            checkIfTargetWasAHit(shipsForTargetPlayer, targetCoordinate).let { ship ->
+                if (ship != null) {
                     if (targeting.targetingMode != DESTROY) {
-                        targetingDao.update(currentPlayerEntity.id, DESTROY)
+                        targetingService.updateTargetingMode(currentPlayerEntity.id, DESTROY)
                     }
 
-                    componentDao.update(shipComponent.id, true)
-                    val allConnectedComponentsAreDestroyed = allConnectedComponentsAreDestroyed(shipComponentsForTargetPlayer,
-                                                                                                shipComponent,
-                                                                                                targetedShips)
-
-                    if (allConnectedComponentsAreDestroyed) {
-                        shipStatusDao.update(shipComponent.shipId, DESTROYED)
+                    if (ship.id !in targeting.targetedShipIds) {
+                        targetingService.updateTargetingWithNewShipId(targeting.id, ship.id)
                     }
 
-                    val allTargetedShipsAreDestroyed = targetedShips.flatMap {
-                        componentDao.findByPlayerShipId(it.shipId)
-                    }.all { it.isDestroyed }
+                    val hitComponentId = ship.components.first { component ->
+                        component.coordinate == targetCoordinate
+                    }.id
 
-                    if (allTargetedShipsAreDestroyed) {
-                        targetingDao.update(targeting.playerId, SEEK)
+                    componentDao.update(hitComponentId, true)
+
+                    val struckShipHasRemainingComponents = struckShipHasRemainingComponents(shipsForTargetPlayer,
+                                                                                            ship.id,
+                                                                                            targetCoordinate)
+
+                    if (!struckShipHasRemainingComponents) {
+                        shipStatusDao.update(ship.id, DESTROYED)
+                        targetingService.removeShipIdFromTargeting(targeting.id, ship.id)
+                    }
+
+                    val updatedTargeting = targetingService.getTargeting(currentPlayerEntity.id)
+
+                    if (updatedTargeting.targetedShipIds.isEmpty()) {
+                        targetingService.updateTargetingMode(currentPlayerEntity.id, SEEK)
                     }
                 }
 
                 turnDao.save(currentPlayerEntity.id,
                              targetPlayerEntity.id,
-                             targetCoordinate.id,
-                             shipComponent != null,
+                             CoordinateMapper.toEntity(targetCoordinate).id,
+                             ship != null,
                              gameTurn)
             }
-
         } else gameDao.conclude(currentPlayerEntity.gameId)
+    }
+
+    private fun checkIfTargetWasAHit(shipsForTargetPlayer: List<Ship>,
+                                     coordinate: Coordinate): Ship? {
+        return shipsForTargetPlayer.firstOrNull { ship ->
+            ship.components.any { component ->
+                component.coordinate == coordinate
+            }
+        }
+    }
+
+    private fun struckShipHasRemainingComponents(ships: List<Ship>,
+                                                 shipId: Int,
+                                                 coordinate: Coordinate): Boolean {
+        return ships.first {
+            it.id == shipId
+        }.components.filterNot {
+            it.coordinate == coordinate
+        }.any {
+            !it.isDestroyed
+        }
     }
 
     /**
@@ -157,6 +190,28 @@ class GamePlayService(private val playerDao: IPlayerDao,
                         targetedShip.shipId
                     }
                 }.all { it.isDestroyed }
+    }
+
+    private fun getShipsForPlayer(playerId: Int): List<Ship> {
+        val allShipEntities = shipDao.findAllShipsForPlayer(playerId)
+
+        return allShipEntities.map { shipEntity ->
+            val shipType = ShipType.fromInt(shipEntity.shipTypeId)
+            val componentList: List<Component> = componentDao.findByPlayerShipId(shipEntity.id)
+                    .map { componentEntity ->
+                        val coordinate = Coordinate(componentEntity.coordinateEntity.horizontal_position,
+                                                    componentEntity.coordinateEntity.vertical_position)
+
+                        Component(componentEntity.id,
+                                  componentEntity.shipId,
+                                  coordinate,
+                                  componentEntity.isDestroyed)
+                    }
+
+            Ship(shipEntity.id,
+                 shipEntity.playerId,
+                 Components(shipType, componentList))
+        }
     }
 
     private fun getShipComponentsForPlayer(playerId: Int): List<ComponentEntity> {
