@@ -45,8 +45,8 @@ class ShipPlacementService(private val logger: Logger,
         val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities, axis, shipType)
         val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates, axis, shipType)
 
-        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinates ->
-            availableCoordinateEntities.containsAll(coordinates)
+        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinateEntities ->
+            availableCoordinateEntities.containsAll(coordinateEntities)
         } ?: throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
 
         val ship = shipDao.save(playerId, shipType.id)
