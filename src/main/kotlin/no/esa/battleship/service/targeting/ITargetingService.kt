@@ -10,4 +10,5 @@ interface ITargetingService {
     fun updateTargetingMode(playerId: Int, targetingMode: TargetingMode): Int
     fun updateTargetingWithNewShipId(targetingId: Int, shipId: Int): Int
     fun removeShipIdFromTargeting(targetingId: Int, shipId: Int): Int
+    fun saveInitialTargeting(playerId: Int, targetPlayerId: Int, gameTurn: Int): Int
 }

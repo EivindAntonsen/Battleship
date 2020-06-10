@@ -1,5 +1,7 @@
 package no.esa.battleship.repository.targetedship
 
+import no.esa.battleship.annotation.DataAccess
+import no.esa.battleship.annotation.Logged
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.entity.TargetedShipEntity
 import no.esa.battleship.repository.exceptions.DataAccessException
@@ -12,8 +14,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class TargetedShipDao(private val logger: Logger,
-                      private val jdbcTemplate: JdbcTemplate) : ITargetedShipDao {
+class TargetedShipDao(private val jdbcTemplate: JdbcTemplate) : ITargetedShipDao {
 
     companion object {
         const val SCHEMA_NAME = "battleship"
@@ -25,6 +26,9 @@ class TargetedShipDao(private val logger: Logger,
 
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
+    @Synchronized
+    @Logged
+    @DataAccess
     override fun save(playerTargetingId: Int, playerShipId: Int): Int {
         val jdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
@@ -36,16 +40,12 @@ class TargetedShipDao(private val logger: Logger,
             addValue(TARGETING_ID, playerTargetingId)
         }
 
-        return logger.log("targetingId", playerTargetingId) {
-            try {
-                jdbcInsert.executeAndReturnKey(parameters).toInt()
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::save, error)
-            }
-        }
+        return jdbcInsert.executeAndReturnKey(parameters).toInt()
     }
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun delete(targetingId: Int, shipId: Int): Int {
         val query = QueryFileReader.readSqlFile(this::class, ::delete)
         val parameters = MapSqlParameterSource().apply {
@@ -53,31 +53,21 @@ class TargetedShipDao(private val logger: Logger,
             addValue(SHIP_ID, shipId)
         }
 
-        return logger.log("targetingId", targetingId) {
-            try {
-                namedTemplate.update(query, parameters)
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::delete, error)
-            }
-        }
+        return namedTemplate.update(query, parameters)
     }
 
+    @Logged
+    @DataAccess
     override fun findByTargetingId(playerTargetingId: Int): List<TargetedShipEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByTargetingId)
         val parameters = MapSqlParameterSource().apply {
             addValue(TARGETING_ID, playerTargetingId)
         }
 
-        return logger.log("playerTargetingId", playerTargetingId) {
-            try {
-                namedTemplate.query(query, parameters) { rs, _ ->
-                    TargetedShipEntity(rs.getInt(PRIMARY_KEY),
-                                       playerTargetingId,
-                                       rs.getInt(SHIP_ID))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::findByTargetingId, error)
-            }
+        return namedTemplate.query(query, parameters) { rs, _ ->
+            TargetedShipEntity(rs.getInt(PRIMARY_KEY),
+                               playerTargetingId,
+                               rs.getInt(SHIP_ID))
         }
     }
 }

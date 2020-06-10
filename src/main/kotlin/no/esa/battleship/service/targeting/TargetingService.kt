@@ -48,11 +48,12 @@ class TargetingService(private val componentDao: IComponentDao,
         return targetedShipDao.delete(targetingId, shipId)
     }
 
-    override fun getTargetCoordinate(targeting: Targeting): Coordinate {
-        val allCoordinates = coordinateDao.findAll().map(CoordinateMapper::toCoordinate)
-        val unavailableCoordinates = getUnavailableCoordinates(targeting)
-        val availableCoordinates = allCoordinates.filterNot { it in unavailableCoordinates }
+    override fun saveInitialTargeting(playerId: Int, targetPlayerId: Int, gameTurn: Int): Int {
+        return targetingDao.save(playerId, targetPlayerId, gameTurn)
+    }
 
+    override fun getTargetCoordinate(targeting: Targeting): Coordinate {
+        val (availableCoordinates, unavailableCoordinates) = getCoordinates(targeting)
         val remainingEnemyShipTypes = shipStatusDao.findAll(targeting.targetPlayerId)
                 .filterValues { it != DESTROYED }
                 .keys
@@ -60,8 +61,7 @@ class TargetingService(private val componentDao: IComponentDao,
                 .map { ShipType.fromInt(it.shipTypeId) }
 
         val scoreMap = scoreCoordinatesForShipTypes(remainingEnemyShipTypes, availableCoordinates)
-
-        return when (targeting.targetingMode) {
+        val coordinate = when (targeting.targetingMode) {
             SEEK -> scoreMap
             DESTROY -> {
                 val relevantMoves = turnDao.getPreviousTurnsForPlayer(targeting.playerId).map(TurnMapper::toTurn)
@@ -75,8 +75,11 @@ class TargetingService(private val componentDao: IComponentDao,
                 scoreCoordinatesForShipTypes(remainingEnemyShipTypes, relevantCoordinates)
             }
         }.entries.maxBy { (_, score) -> score }?.key
+
+        return coordinate
                 ?: availableCoordinates.shuffled().firstOrNull()
-                ?: throw NoValidCoordinatesException("No available coordinates left! ${unavailableCoordinates.size} unavailable coordinates registered.")
+                ?: throw NoValidCoordinatesException("No available coordinates left! " +
+                                                             "${unavailableCoordinates.size} unavailable coordinates registered.")
     }
 
     private fun scoreCoordinatesForShipTypes(remainingEnemyShipTypes: List<ShipType>,
@@ -92,7 +95,8 @@ class TargetingService(private val componentDao: IComponentDao,
         }.toMap()
     }
 
-    private fun getUnavailableCoordinates(targeting: Targeting): List<Coordinate> {
+    private fun getCoordinates(targeting: Targeting): Pair<List<Coordinate>, List<Coordinate>> {
+        val allCoordinates = coordinateDao.findAll().map(CoordinateMapper::toCoordinate)
         val previousTurnsForPlayer = turnDao.getPreviousTurnsForPlayer(targeting.playerId)
         val destroyedComponentCoordinates = shipStatusDao.findAll(targeting.targetPlayerId)
                 .filterValues { status ->
@@ -109,10 +113,14 @@ class TargetingService(private val componentDao: IComponentDao,
             turn.coordinateEntity
         }
 
-        return listOf(destroyedComponentCoordinates, previousCoordinates)
+        val unavailableCoordinates = listOf(destroyedComponentCoordinates, previousCoordinates)
                 .flatten()
                 .distinct()
                 .map(CoordinateMapper::toCoordinate)
+
+        return allCoordinates.filter {
+            it !in unavailableCoordinates
+        } to unavailableCoordinates
     }
 
     private fun scoreCoordinates(coordinates: List<Coordinate>, shipType: ShipType): Map<Coordinate, Int> {

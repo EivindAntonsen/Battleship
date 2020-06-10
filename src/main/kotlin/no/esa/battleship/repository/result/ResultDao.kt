@@ -1,5 +1,7 @@
 package no.esa.battleship.repository.result
 
+import no.esa.battleship.annotation.DataAccess
+import no.esa.battleship.annotation.Logged
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.entity.ResultEntity
@@ -12,8 +14,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class ResultDao(private val logger: Logger,
-                private val jdbcTemplate: JdbcTemplate) : IResultDao {
+class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
 
     companion object {
         const val SCHEMA_NAME = "battleship"
@@ -26,6 +27,8 @@ class ResultDao(private val logger: Logger,
     private val namedParameterJdbcTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun save(gameId: Int, winningPlayerId: Int?): ResultEntity {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
@@ -39,49 +42,35 @@ class ResultDao(private val logger: Logger,
             }
         }
 
-        return logger.log("gameId", gameId) {
-            try {
-                val id = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
+        val id = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
-                ResultEntity(id, gameId, winningPlayerId)
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::save, error)
-            }
-        }
+        return ResultEntity(id, gameId, winningPlayerId)
     }
 
+    @Logged
+    @DataAccess
     override fun get(gameId: Int): ResultEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }
 
-        return logger.log("gameId", gameId) {
-            try {
-                namedParameterJdbcTemplate.queryForObject(query, parameters) { rs, _ ->
-                    ResultEntity(rs.getInt(PRIMARY_KEY),
-                                 rs.getInt(GAME_ID),
-                                 rs.getInt(WINNING_PLAYER_ID))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::get, error)
-            }
-        }
+        return namedParameterJdbcTemplate.queryForObject(query, parameters) { rs, _ ->
+            ResultEntity(rs.getInt(PRIMARY_KEY),
+                         rs.getInt(GAME_ID),
+                         rs.getInt(WINNING_PLAYER_ID))
+        }!! //fixme
     }
 
-    override fun getAll() {
+    @Logged
+    @DataAccess
+    override fun getAll(): List<ResultEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::getAll)
 
-        return logger.log {
-            try {
-                jdbcTemplate.query(query) { rs, _ ->
-                    ResultEntity(rs.getInt(PRIMARY_KEY),
-                                 rs.getInt(GAME_ID),
-                                 rs.getInt(WINNING_PLAYER_ID))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::getAll, error)
-            }
+        return jdbcTemplate.query(query) { rs, _ ->
+            ResultEntity(rs.getInt(PRIMARY_KEY),
+                         rs.getInt(GAME_ID),
+                         rs.getInt(WINNING_PLAYER_ID))
         }
     }
 }

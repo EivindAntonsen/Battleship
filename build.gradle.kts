@@ -63,6 +63,7 @@ dependencies {
     developmentOnly("$springBoot:spring-boot-devtools")
     implementation("$springBoot:spring-boot-starter-jdbc")
     implementation("$springBoot:spring-boot-starter-web")
+    implementation("$springBoot:spring-boot-starter-aop")
     testImplementation("$springBoot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

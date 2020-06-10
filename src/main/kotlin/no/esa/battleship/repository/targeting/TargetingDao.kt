@@ -1,5 +1,7 @@
 package no.esa.battleship.repository.targeting
 
+import no.esa.battleship.annotation.DataAccess
+import no.esa.battleship.annotation.Logged
 import no.esa.battleship.enums.TargetingMode
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.entity.TargetingEntity
@@ -13,8 +15,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class TargetingDao(private val logger: Logger,
-                   private val jdbcTemplate: JdbcTemplate) : ITargetingDao {
+class TargetingDao(private val jdbcTemplate: JdbcTemplate) : ITargetingDao {
 
     companion object {
         const val SCHEMA_NAME = "battleship"
@@ -27,27 +28,25 @@ class TargetingDao(private val logger: Logger,
 
     private val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
+    @Logged
+    @DataAccess
     override fun find(playerId: Int): TargetingEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    TargetingEntity(rs.getInt(PRIMARY_KEY),
-                                    rs.getInt(PLAYER_ID),
-                                    rs.getInt(TARGET_PLAYER_ID),
-                                    rs.getInt(TARGETING_MODE_ID))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::find, error)
-            }
-        }
+        return namedTemplate.queryForObject(query, parameters) { rs, _ ->
+            TargetingEntity(rs.getInt(PRIMARY_KEY),
+                            rs.getInt(PLAYER_ID),
+                            rs.getInt(TARGET_PLAYER_ID),
+                            rs.getInt(TARGETING_MODE_ID))
+        }!! // todo fix this
     }
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun update(playerId: Int, targetingMode: TargetingMode): Int {
         val query = QueryFileReader.readSqlFile(this::class, ::update)
         val parameters = MapSqlParameterSource().apply {
@@ -55,16 +54,12 @@ class TargetingDao(private val logger: Logger,
             addValue(PLAYER_ID, playerId)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                namedTemplate.update(query, parameters)
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::update, error)
-            }
-        }
+        return namedTemplate.update(query, parameters)
     }
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun save(playerId: Int,
                       targetPlayerId: Int,
                       gameTurnId: Int): Int {
@@ -79,12 +74,6 @@ class TargetingDao(private val logger: Logger,
             addValue(TARGETING_MODE_ID, TargetingMode.SEEK.id)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::save, error)
-            }
-        }
+        return simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
     }
 }

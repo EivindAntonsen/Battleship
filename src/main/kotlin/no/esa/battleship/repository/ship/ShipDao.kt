@@ -1,5 +1,7 @@
 package no.esa.battleship.repository.ship
 
+import no.esa.battleship.annotation.DataAccess
+import no.esa.battleship.annotation.Logged
 import no.esa.battleship.exceptions.NoSuchShipException
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.mapper.ShipMapper
@@ -14,8 +16,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class ShipDao(private val logger: Logger,
-              private val jdbcTemplate: JdbcTemplate) : IShipDao {
+class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
 
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
@@ -27,47 +28,41 @@ class ShipDao(private val logger: Logger,
         const val SHIP_TYPE_ID = "ship_type_id"
     }
 
+    @Logged
+    @DataAccess
     override fun findAllShipsForPlayer(playerId: Int): List<ShipEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findAllShipsForPlayer)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                namedTemplate.query(query, parameters) { rs, _ ->
-                    val shipTypeId = rs.getInt(SHIP_TYPE_ID)
-                    val id = rs.getInt(PRIMARY_KEY)
+        return namedTemplate.query(query, parameters) { rs, _ ->
+            val shipTypeId = rs.getInt(SHIP_TYPE_ID)
+            val id = rs.getInt(PRIMARY_KEY)
 
-                    ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::findAllShipsForPlayer, error)
-            }
+            ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
         }
     }
 
+    @Logged
+    @DataAccess
     override fun find(id: Int): ShipEntity {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, id)
         }
 
-        return logger.log("id", id) {
-            try {
-                namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    val playerId = rs.getInt(PLAYER_ID)
-                    val shipTypeId = rs.getInt(SHIP_TYPE_ID)
+        return namedTemplate.queryForObject(query, parameters) { rs, _ ->
+            val playerId = rs.getInt(PLAYER_ID)
+            val shipTypeId = rs.getInt(SHIP_TYPE_ID)
 
-                    ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::find, error)
-            }
+            ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
         } ?: throw NoSuchShipException(id)
     }
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun save(playerId: Int, shipTypeId: Int): ShipEntity {
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
@@ -79,14 +74,8 @@ class ShipDao(private val logger: Logger,
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
 
-        return logger.log("playerId", playerId) {
-            val shipId = try {
-                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::save, error)
-            }
+        val shipId = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
-            ShipMapper.fromShipTypeIdWithParameters(shipId, playerId, shipTypeId)
-        }
+        return ShipMapper.fromShipTypeIdWithParameters(shipId, playerId, shipTypeId)
     }
 }

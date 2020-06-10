@@ -29,7 +29,6 @@ class GamePlayService(private val playerDao: IPlayerDao,
                       private val componentDao: IComponentDao,
                       private val shipStatusDao: IShipStatusDao,
                       private val turnDao: ITurnDao,
-                      private val targetingDao: ITargetingDao,
                       private val playerStrategyDao: IPlayerStrategyDao,
                       private val resultDao: IResultDao,
                       private val targetingService: ITargetingService) : IGamePlayService {
@@ -40,8 +39,8 @@ class GamePlayService(private val playerDao: IPlayerDao,
 
         var gameTurnId = 1
 
-        targetingDao.save(player1.id, player2.id, gameTurnId)
-        targetingDao.save(player2.id, player1.id, gameTurnId)
+        targetingService.saveInitialTargeting(player1.id, player2.id, gameTurnId)
+        targetingService.saveInitialTargeting(player2.id, player1.id, gameTurnId)
 
         do {
             executeGameTurn(player1, player2, gameTurnId)

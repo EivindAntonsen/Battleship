@@ -11,7 +11,10 @@ object CoordinateMapper {
     }
 
     fun toEntity(coordinate: Coordinate): CoordinateEntity {
-        val id = coordinate.xAsInt().times(10).plus(coordinate.y)
+        val id = coordinate.xAsInt()
+                .minus(1) // to support 1-10
+                .times(10) // 'a' = 1-10, 'b' = 11-20 etc
+                .plus(coordinate.y) // add the Y value
 
         return CoordinateEntity(id, coordinate.x, coordinate.y)
     }
