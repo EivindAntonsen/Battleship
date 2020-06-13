@@ -4,9 +4,6 @@ import no.esa.battleship.annotation.DataAccess
 import no.esa.battleship.annotation.Logged
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.entity.TargetedShipEntity
-import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -29,15 +26,15 @@ class TargetedShipDao(private val jdbcTemplate: JdbcTemplate) : ITargetedShipDao
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(playerTargetingId: Int, playerShipId: Int): Int {
+    override fun save(targetingId: Int, shipId: Int): Int {
         val jdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
         val parameters = MapSqlParameterSource().apply {
-            addValue(SHIP_ID, playerShipId)
-            addValue(TARGETING_ID, playerTargetingId)
+            addValue(SHIP_ID, shipId)
+            addValue(TARGETING_ID, targetingId)
         }
 
         return jdbcInsert.executeAndReturnKey(parameters).toInt()
@@ -58,15 +55,15 @@ class TargetedShipDao(private val jdbcTemplate: JdbcTemplate) : ITargetedShipDao
 
     @Logged
     @DataAccess
-    override fun findByTargetingId(playerTargetingId: Int): List<TargetedShipEntity> {
+    override fun findByTargetingId(targetingId: Int): List<TargetedShipEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByTargetingId)
         val parameters = MapSqlParameterSource().apply {
-            addValue(TARGETING_ID, playerTargetingId)
+            addValue(TARGETING_ID, targetingId)
         }
 
         return namedTemplate.query(query, parameters) { rs, _ ->
             TargetedShipEntity(rs.getInt(PRIMARY_KEY),
-                               playerTargetingId,
+                               targetingId,
                                rs.getInt(SHIP_ID))
         }
     }

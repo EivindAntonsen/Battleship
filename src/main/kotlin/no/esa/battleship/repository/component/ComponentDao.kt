@@ -6,7 +6,6 @@ import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.repository.entity.CoordinateEntity
-import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.player.PlayerDao
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
@@ -31,7 +30,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(playerShipId: Int, coordinateEntities: List<CoordinateEntity>): List<ComponentEntity> {
+    override fun save(shipId: Int, coordinateEntities: List<CoordinateEntity>): List<ComponentEntity> {
         return coordinateEntities.map { coordinate ->
             val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
                 schemaName = SCHEMA_NAME
@@ -40,14 +39,14 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
             }
 
             val parameters = MapSqlParameterSource().apply {
-                addValue(PLAYER_SHIP_ID, playerShipId)
+                addValue(PLAYER_SHIP_ID, shipId)
                 addValue(COORDINATE_ID, coordinate.id)
                 addValue(IS_DESTROYED, false)
             }
 
             val componentId = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
-            ComponentEntity(componentId, playerShipId, coordinate, false)
+            ComponentEntity(componentId, shipId, coordinate, false)
         }
     }
 
@@ -64,10 +63,10 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
 
     @Logged
     @DataAccess
-    override fun findByPlayerShipId(playerShipId: Int): List<ComponentEntity> {
+    override fun findByPlayerShipId(shipId: Int): List<ComponentEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::findByPlayerShipId)
         val parameters = MapSqlParameterSource().apply {
-            addValue(PLAYER_SHIP_ID, playerShipId)
+            addValue(PLAYER_SHIP_ID, shipId)
         }
 
         return find(query, parameters)
@@ -91,10 +90,10 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun update(playerShipComponentId: Int, isDestroyed: Boolean): Int {
+    override fun update(componentId: Int, isDestroyed: Boolean): Int {
         val query = QueryFileReader.readSqlFile(this::class, ::update)
         val parameters = MapSqlParameterSource().apply {
-            addValue(PRIMARY_KEY, playerShipComponentId)
+            addValue(PRIMARY_KEY, componentId)
         }
 
         return namedTemplate.update(query, parameters)

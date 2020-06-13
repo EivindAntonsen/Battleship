@@ -4,8 +4,8 @@ import no.esa.battleship.enums.ShipStatus
 import no.esa.battleship.repository.entity.ShipEntity
 
 interface IShipStatusDao {
-    fun find(playerShipId: Int): ShipStatus
-    fun save(playerShipId: Int): Int
-    fun update(playerShipId: Int, shipStatus: ShipStatus): Int
+    fun find(shipId: Int): ShipStatus
+    fun save(shipId: Int): Int
+    fun update(shipId: Int, shipStatus: ShipStatus): Int
     fun findAll(playerId: Int): Map<ShipEntity, ShipStatus>
 }

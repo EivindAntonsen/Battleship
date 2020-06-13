@@ -4,10 +4,7 @@ import no.esa.battleship.annotation.DataAccess
 import no.esa.battleship.annotation.Logged
 import no.esa.battleship.exceptions.NoSuchGameException
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.entity.GameEntity
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

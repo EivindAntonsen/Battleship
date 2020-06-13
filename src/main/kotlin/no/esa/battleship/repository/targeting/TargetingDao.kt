@@ -3,11 +3,9 @@ package no.esa.battleship.repository.targeting
 import no.esa.battleship.annotation.DataAccess
 import no.esa.battleship.annotation.Logged
 import no.esa.battleship.enums.TargetingMode
+import no.esa.battleship.exceptions.NoSuchTargetingModeException
 import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.entity.TargetingEntity
-import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -40,8 +38,8 @@ class TargetingDao(private val jdbcTemplate: JdbcTemplate) : ITargetingDao {
             TargetingEntity(rs.getInt(PRIMARY_KEY),
                             rs.getInt(PLAYER_ID),
                             rs.getInt(TARGET_PLAYER_ID),
-                            rs.getInt(TARGETING_MODE_ID))
-        }!! // todo fix this
+                            TargetingMode.fromInt(rs.getInt(TARGETING_MODE_ID)))
+        } ?: throw NoSuchTargetingModeException()
     }
 
     @Synchronized
@@ -60,6 +58,11 @@ class TargetingDao(private val jdbcTemplate: JdbcTemplate) : ITargetingDao {
     @Synchronized
     @Logged
     @DataAccess
+    /**
+     * Saves the initial targeting state for a given player. As it
+     * happens before the first round, no ship will have been found,
+     * hence it starts with TargetingMode.SEEK.
+     */
     override fun save(playerId: Int,
                       targetPlayerId: Int,
                       gameTurnId: Int): Int {

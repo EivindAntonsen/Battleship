@@ -1,6 +1,7 @@
 package no.esa.battleship.aspect
 
 import no.esa.battleship.utils.abbreviate
+import no.esa.battleship.utils.executeAndMeasureTimeMillis
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -20,9 +21,9 @@ class LogAspect {
 
         logger.info("Call \t\t${signature}\t$args")
 
-        val start = System.currentTimeMillis()
-        val result = joinPoint.proceed()
-        val duration = System.currentTimeMillis() - start
+        val (result, duration) = executeAndMeasureTimeMillis {
+            joinPoint.proceed()
+        }
 
         logger.info("Response \t${result.toString().abbreviate()} in ${duration}ms.")
 

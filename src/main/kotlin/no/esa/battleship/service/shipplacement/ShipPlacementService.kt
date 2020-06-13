@@ -5,14 +5,14 @@ import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.exceptions.GameInitializationException.ShipPlacement
-import no.esa.battleship.repository.coordinate.ICoordinateDao
-import no.esa.battleship.repository.ship.IShipDao
 import no.esa.battleship.repository.component.IComponentDao
-import no.esa.battleship.repository.shipstatus.IShipStatusDao
+import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.repository.entity.ShipEntity
-import no.esa.battleship.utils.isVerticallyAlignedWith
+import no.esa.battleship.repository.ship.IShipDao
+import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.utils.isHorizontallyAlignedWith
+import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 

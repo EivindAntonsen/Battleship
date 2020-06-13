@@ -2,7 +2,6 @@ package no.esa.battleship.resource.exception
 
 import no.esa.battleship.exceptions.GameInitializationException
 import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -26,7 +25,7 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(DataAccessException::class)
     fun handle(exception: DataAccessException): ResponseEntity<String> {
-        val callingClass = exception.callingClass.simpleName?.toCamelCase()
+        val callingClass = exception.callingClass.simpleName?.decapitalize()
         val callingFunction = exception.callingFunction.name
 
         exception.printStackTrace()

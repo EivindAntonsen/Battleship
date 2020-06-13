@@ -2,14 +2,13 @@ package no.esa.battleship.service.initialization
 
 import no.esa.battleship.enums.Strategy
 import no.esa.battleship.exceptions.GameInitializationException.TooManyPlayers
+import no.esa.battleship.repository.entity.GameEntity
+import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.targeting.ITargetingDao
-import no.esa.battleship.repository.entity.GameEntity
-import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.service.shipplacement.IShipPlacementService
-import no.esa.battleship.utils.log
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -20,20 +19,19 @@ class GameInitializationService(private val logger: Logger,
                                 private val gameDao: IGameDao,
                                 private val playerDao: IPlayerDao,
                                 private val shipPlacementService: IShipPlacementService,
-                                private val targetingModeDao: ITargetingDao,
                                 private val playerStrategyDao: IPlayerStrategyDao)
     : IGameInitializationService {
 
     override fun initializeNewGame(gameSeriesId: UUID?): GameEntity {
-        return logger.log {
-            newGame(gameSeriesId).also { game ->
-                repeat(2) {
-                    newPlayer(game).also { player ->
-                        shipPlacementService.placeShipsForPlayer(player.id)
-                    }
-                }
-            }
+        val gameEntity = newGame(gameSeriesId)
+
+        repeat(2) {
+            val playerEntity = newPlayer(gameEntity)
+
+            shipPlacementService.placeShipsForPlayer(playerEntity.id)
         }
+
+        return gameEntity
     }
 
     private fun newGame(gameSeriesId: UUID? = null): GameEntity {

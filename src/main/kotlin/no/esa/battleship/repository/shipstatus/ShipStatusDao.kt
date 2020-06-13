@@ -4,12 +4,9 @@ import no.esa.battleship.annotation.DataAccess
 import no.esa.battleship.annotation.Logged
 import no.esa.battleship.enums.ShipStatus
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.mapper.ShipMapper
-import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.repository.ship.ShipDao
 import no.esa.battleship.repository.entity.ShipEntity
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
+import no.esa.battleship.repository.mapper.ShipMapper
+import no.esa.battleship.repository.ship.ShipDao
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -24,17 +21,17 @@ class ShipStatusDao(private val jdbcTemplate: JdbcTemplate) : IShipStatusDao {
         const val TABLE_NAME = "ship_status"
         const val PRIMARY_KEY = "id"
         const val SHIP_STATUS_ID = "ship_status_id"
-        const val PLAYER_SHIP_ID = "ship_id"
+        const val SHIP_ID = "ship_id"
     }
 
     private val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     @Logged
     @DataAccess
-    override fun find(playerShipId: Int): ShipStatus {
+    override fun find(shipId: Int): ShipStatus {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
-            addValue(PLAYER_SHIP_ID, playerShipId)
+            addValue(SHIP_ID, shipId)
         }
 
         return namedTemplate.queryForObject(query, parameters) { rs, _ ->
@@ -64,14 +61,14 @@ class ShipStatusDao(private val jdbcTemplate: JdbcTemplate) : IShipStatusDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(playerShipId: Int): Int {
+    override fun save(shipId: Int): Int {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
         val parameters = MapSqlParameterSource().apply {
-            addValue(PLAYER_SHIP_ID, playerShipId)
+            addValue(SHIP_ID, shipId)
             addValue(SHIP_STATUS_ID, ShipStatus.INTACT.id)
         }
 
@@ -81,11 +78,11 @@ class ShipStatusDao(private val jdbcTemplate: JdbcTemplate) : IShipStatusDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun update(playerShipId: Int, shipStatus: ShipStatus): Int {
+    override fun update(shipId: Int, shipStatus: ShipStatus): Int {
         val query = QueryFileReader.readSqlFile(this::class, ::update)
         val parameters = MapSqlParameterSource().apply {
             addValue(SHIP_STATUS_ID, shipStatus.id)
-            addValue(PLAYER_SHIP_ID, playerShipId)
+            addValue(SHIP_ID, shipId)
         }
 
         return namedTemplate.update(query, parameters)

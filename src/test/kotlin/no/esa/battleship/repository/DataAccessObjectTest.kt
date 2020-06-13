@@ -8,12 +8,12 @@ import no.esa.battleship.TestData
 import no.esa.battleship.config.TestConfig
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.enums.Strategy
+import no.esa.battleship.repository.component.ComponentDao
 import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.game.GameDao
 import no.esa.battleship.repository.player.PlayerDao
-import no.esa.battleship.repository.ship.ShipDao
-import no.esa.battleship.repository.component.ComponentDao
 import no.esa.battleship.repository.playerstrategy.PlayerStrategyDao
+import no.esa.battleship.repository.ship.ShipDao
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -23,12 +23,12 @@ import java.time.LocalDateTime
 internal class DataAccessObjectTest {
 
     private val logger: Logger = mockk()
-    private val gameDao = GameDao(logger, TestConfig.jdbcTemplate)
-    private val coordinateDao = CoordinateDao(logger, TestConfig.jdbcTemplate)
-    private val playerDao = PlayerDao(logger, TestConfig.jdbcTemplate)
-    private val playerShipComponentDao = ComponentDao(logger, TestConfig.jdbcTemplate)
-    private val playerShipDao = ShipDao(logger, TestConfig.jdbcTemplate)
-    private val playerStrategyDao = PlayerStrategyDao(logger, TestConfig.jdbcTemplate)
+    private val gameDao = GameDao(TestConfig.jdbcTemplate)
+    private val coordinateDao = CoordinateDao(TestConfig.jdbcTemplate)
+    private val playerDao = PlayerDao(TestConfig.jdbcTemplate)
+    private val playerShipComponentDao = ComponentDao(TestConfig.jdbcTemplate)
+    private val playerShipDao = ShipDao(TestConfig.jdbcTemplate)
+    private val playerStrategyDao = PlayerStrategyDao(TestConfig.jdbcTemplate)
 
     @BeforeEach
     fun init() {
