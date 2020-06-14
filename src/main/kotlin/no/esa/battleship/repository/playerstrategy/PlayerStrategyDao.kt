@@ -5,9 +5,6 @@ import no.esa.battleship.annotation.Logged
 import no.esa.battleship.enums.Strategy
 import no.esa.battleship.exceptions.NoSuchStrategyException
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -54,6 +51,8 @@ class PlayerStrategyDao(private val jdbcTemplate: JdbcTemplate) : IPlayerStrateg
 
         return namedTemplate.queryForObject(query, parameters) { rs, _ ->
             Strategy.fromInt(rs.getInt(STRATEGY_ID))
-        } ?: throw NoSuchStrategyException(playerId)
+        } ?: throw NoSuchStrategyException(this::class,
+                                           ::find,
+                                           "No strategy found for player with id $playerId!")
     }
 }

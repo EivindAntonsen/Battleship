@@ -5,4 +5,4 @@ import no.esa.battleship.enums.TargetingMode
 data class TargetingEntity(val id: Int,
                            val playerId: Int,
                            val targetPlayerId: Int,
-                           val targetingModeId: Int)
+                           val targetingMode: TargetingMode)

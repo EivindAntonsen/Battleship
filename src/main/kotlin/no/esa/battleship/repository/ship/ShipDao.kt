@@ -4,11 +4,8 @@ import no.esa.battleship.annotation.DataAccess
 import no.esa.battleship.annotation.Logged
 import no.esa.battleship.exceptions.NoSuchShipException
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.mapper.ShipMapper
-import no.esa.battleship.repository.exceptions.DataAccessException
 import no.esa.battleship.repository.entity.ShipEntity
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
+import no.esa.battleship.repository.mapper.ShipMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -57,7 +54,7 @@ class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
             val shipTypeId = rs.getInt(SHIP_TYPE_ID)
 
             ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
-        } ?: throw NoSuchShipException(id)
+        } ?: throw NoSuchShipException(this::class, ::find, "Found no ship with id $id!")
     }
 
     @Synchronized

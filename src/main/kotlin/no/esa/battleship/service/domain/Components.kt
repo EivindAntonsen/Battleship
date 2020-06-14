@@ -4,40 +4,39 @@ import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.ComponentsException.*
+import no.esa.battleship.exceptions.ComponentsException.Alignment
+import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.utils.isAdjacentWith
+import no.esa.battleship.utils.validateElements
 
 data class Components(private val shipType: ShipType,
-                      private val components: List<Component>) : Iterable<Component> {
+                      private val components: List<ComponentEntity>) : Iterable<ComponentEntity> {
 
     init {
-
-        fun verifySize(components: List<Component>) {
-            if (components.size != shipType.size) throw Composition(shipType, components.size)
+        fun verifySize(components: List<ComponentEntity>): Boolean {
+            return components.size == shipType.size
         }
 
-        fun verifyIntegrity(components: List<Component>) {
-            components.map { it.coordinate }.sortedBy { coordinate ->
+        fun verifyIntegrity(components: List<ComponentEntity>): Boolean {
+            return components.map { it.coordinateEntity }.sortedBy { coordinate ->
                 when (getAxis(components)) {
-                    HORIZONTAL -> coordinate.xAsInt()
-                    VERTICAL -> coordinate.y
+                    HORIZONTAL -> coordinate.horizontalPositionAsInt()
+                    VERTICAL -> coordinate.vertical_position
                 }
-            }.reduce { acc, coordinate ->
-                if (acc isAdjacentWith coordinate) coordinate
-                else throw IntegrityViolation(acc, coordinate)
+            }.validateElements { current, next ->
+                current isAdjacentWith next
             }
         }
 
-        verifySize(components)
-        verifyIntegrity(components)
+        require(verifySize(components) && verifyIntegrity(components))
     }
 
-    fun getAxis(components: List<Component>): Axis {
+    private fun getAxis(components: List<ComponentEntity>): Axis {
         val verticalSpan = components.map {
-            it.coordinate.y
+            it.coordinateEntity.vertical_position
         }.distinct().size
         val horizontalSpan = components.map {
-            it.coordinate.xAsInt()
+            it.coordinateEntity.horizontalPositionAsInt()
         }.distinct().size
 
         return when {
@@ -47,7 +46,7 @@ data class Components(private val shipType: ShipType,
         }
     }
 
-    override fun iterator(): Iterator<Component> {
+    override fun iterator(): Iterator<ComponentEntity> {
         return components.iterator()
     }
 

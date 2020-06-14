@@ -1,9 +1,10 @@
 package no.esa.battleship.resource.exception
 
 import no.esa.battleship.exceptions.GameInitializationException
+import no.esa.battleship.exceptions.GameStateException
 import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.toCamelCase
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
@@ -26,10 +27,9 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(DataAccessException::class)
     fun handle(exception: DataAccessException): ResponseEntity<String> {
-        val callingClass = exception.callingClass.simpleName?.toCamelCase()
+        val callingClass = exception.callingClass.simpleName?.decapitalize()
         val callingFunction = exception.callingFunction.name
 
-        exception.printStackTrace()
         logger.error(exception.cause?.message ?: exception.message ?: exception.toString())
 
         return ResponseEntity
@@ -39,7 +39,6 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
 
     @ExceptionHandler(GameInitializationException::class)
     fun handle(exception: GameInitializationException): ResponseEntity<String> {
-        exception.printStackTrace()
         logger.warn(exception.message)
 
         return ResponseEntity
@@ -50,7 +49,6 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
     @ExceptionHandler(ConstraintViolationException::class,
                       IllegalArgumentException::class)
     fun handle(exception: ConstraintViolationException): ResponseEntity<String> {
-        exception.printStackTrace()
         logger.warn(exception.message)
 
         return ResponseEntity
@@ -58,12 +56,20 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
                 .body(exception.message)
     }
 
+    @ExceptionHandler(GameStateException::class)
+    fun handle(exception: GameStateException): ResponseEntity<String> {
+        LoggerFactory.getLogger(exception.callingClass.qualifiedName).warn(exception.message)
+
+        return ResponseEntity
+                .status(INTERNAL_SERVER_ERROR)
+                .body("Invalid game state, check server logs for cause.")
+    }
+
     /**
      * Any other exception not covered by the above.
      */
     @ExceptionHandler(Exception::class)
     fun handle(exception: Throwable): ResponseEntity<String> {
-        exception.printStackTrace()
         logger.warn(exception.message)
 
         return ResponseEntity
