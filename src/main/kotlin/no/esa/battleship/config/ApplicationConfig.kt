@@ -30,13 +30,13 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties,
         val flyway = Flyway.configure()
                 .dataSource(dataSource())
                 .schemas("battleship")
-                .locations("classpath:db/migration/common", "classpath:db/migration/deploy")
+                .locations("classpath:db/migration/common",
+                           "classpath:db/migration/deploy")
                 .outOfOrder(true)
                 .table("schema_version")
                 .load()
 
-        if (environment.activeProfiles.contains("dev")) flyway.clean()
-
+        flyway.clean()
         flyway.migrate()
 
         return flyway

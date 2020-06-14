@@ -1,3 +1,9 @@
 package no.esa.battleship.exceptions
 
-class NoSuchStrategyException(playerId: Int) : RuntimeException("No strategy was found for player $playerId.")
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+
+class NoSuchStrategyException(override val callingClass: KClass<*>,
+                              override val callingFunction: KFunction<*>,
+                              override val message: String? = null,
+                              override val cause: Throwable? = null) : GameStateException()

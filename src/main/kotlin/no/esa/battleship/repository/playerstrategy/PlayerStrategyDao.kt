@@ -1,11 +1,10 @@
 package no.esa.battleship.repository.playerstrategy
 
+import no.esa.battleship.annotation.DataAccess
+import no.esa.battleship.annotation.Logged
 import no.esa.battleship.enums.Strategy
 import no.esa.battleship.exceptions.NoSuchStrategyException
 import no.esa.battleship.repository.QueryFileReader
-import no.esa.battleship.repository.exceptions.DataAccessException
-import no.esa.battleship.utils.log
-import org.slf4j.Logger
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -13,8 +12,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
 
 @Repository
-class PlayerStrategyDao(private val logger: Logger,
-                        private val jdbcTemplate: JdbcTemplate) : IPlayerStrategyDao {
+class PlayerStrategyDao(private val jdbcTemplate: JdbcTemplate) : IPlayerStrategyDao {
 
     companion object {
         const val SCHEMA_NAME = "battleship"
@@ -27,6 +25,8 @@ class PlayerStrategyDao(private val logger: Logger,
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
 
     @Synchronized
+    @Logged
+    @DataAccess
     override fun save(playerId: Int, strategy: Strategy): Int {
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
@@ -38,29 +38,21 @@ class PlayerStrategyDao(private val logger: Logger,
             usingGeneratedKeyColumns(PRIMARY_KEY)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::save, error)
-            }
-        }
+        return simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
     }
 
+    @Logged
+    @DataAccess
     override fun find(playerId: Int): Strategy {
         val query = QueryFileReader.readSqlFile(this::class, ::find)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
-        return logger.log("playerId", playerId) {
-            try {
-                namedTemplate.queryForObject(query, parameters) { rs, _ ->
-                    Strategy.fromInt(rs.getInt(STRATEGY_ID))
-                }
-            } catch (error: Exception) {
-                throw DataAccessException(this::class, ::find, error)
-            } ?: throw NoSuchStrategyException(playerId)
-        }
+        return namedTemplate.queryForObject(query, parameters) { rs, _ ->
+            Strategy.fromInt(rs.getInt(STRATEGY_ID))
+        } ?: throw NoSuchStrategyException(this::class,
+                                           ::find,
+                                           "No strategy found for player with id $playerId!")
     }
 }

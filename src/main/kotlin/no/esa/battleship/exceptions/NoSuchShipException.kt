@@ -1,3 +1,9 @@
 package no.esa.battleship.exceptions
 
-class NoSuchShipException(playerShipId: Int) : RuntimeException("Found no player ship matching id $playerShipId!")
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+
+class NoSuchShipException(override val callingClass: KClass<*>,
+                          override val callingFunction: KFunction<*>,
+                          override val message: String? = null,
+                          override val cause: Throwable? = null) : GameStateException()

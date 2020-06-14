@@ -1,7 +1,7 @@
 package no.esa.battleship.repository.coordinate
 
-import no.esa.battleship.service.domain.Coordinate
+import no.esa.battleship.repository.entity.CoordinateEntity
 
 interface ICoordinateDao {
-    fun findAll(): List<Coordinate>
+    fun findAll(): List<CoordinateEntity>
 }

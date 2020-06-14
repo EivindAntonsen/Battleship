@@ -4,24 +4,23 @@ import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.GameInitialization.ShipPlacementException
+import no.esa.battleship.exceptions.GameInitializationException.ShipPlacement
+import no.esa.battleship.repository.component.IComponentDao
 import no.esa.battleship.repository.coordinate.ICoordinateDao
-import no.esa.battleship.repository.playership.IPlayerShipDao
-import no.esa.battleship.repository.playershipcomponent.IPlayerShipComponentDao
-import no.esa.battleship.repository.playershipstatus.IPlayerShipStatusDao
-import no.esa.battleship.repository.playershipstatus.PlayerShipStatusDao
-import no.esa.battleship.service.domain.Coordinate
-import no.esa.battleship.service.domain.Ship
-import no.esa.battleship.utils.isVerticallyAlignedWith
+import no.esa.battleship.repository.entity.CoordinateEntity
+import no.esa.battleship.repository.entity.ShipEntity
+import no.esa.battleship.repository.ship.IShipDao
+import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.utils.isHorizontallyAlignedWith
+import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
 @Service
 class ShipPlacementService(private val logger: Logger,
-                           private val playerShipDao: IPlayerShipDao,
-                           private val playerShipComponentDao: IPlayerShipComponentDao,
-                           private val playerShipStatusDao: IPlayerShipStatusDao,
+                           private val shipDao: IShipDao,
+                           private val componentDao: IComponentDao,
+                           private val shipStatusDao: IShipStatusDao,
                            private val coordinateDao: ICoordinateDao) : IShipPlacementService {
 
     companion object {
@@ -40,19 +39,19 @@ class ShipPlacementService(private val logger: Logger,
 
     private fun placeShip(playerId: Int,
                           axis: Axis,
-                          availableCoordinates: List<Coordinate>,
-                          shipType: ShipType): Ship {
+                          availableCoordinateEntities: List<CoordinateEntity>,
+                          shipType: ShipType): ShipEntity {
 
-        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinates, axis, shipType)
+        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities, axis, shipType)
         val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates, axis, shipType)
 
-        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinates ->
-            availableCoordinates.containsAll(coordinates)
-        } ?: throw ShipPlacementException("Could not place ship: Unable to verify all found coordinates were available.")
+        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinateEntities ->
+            availableCoordinateEntities.containsAll(coordinateEntities)
+        } ?: throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
 
-        val ship = playerShipDao.save(playerId, shipType.id)
-        playerShipComponentDao.save(ship.id, selectedComponentCoordinates)
-        playerShipStatusDao.save(ship.id)
+        val ship = shipDao.save(playerId, shipType.id)
+        componentDao.save(ship.id, selectedComponentCoordinates)
+        shipStatusDao.save(ship.id)
 
         return ship
     }
@@ -62,28 +61,28 @@ class ShipPlacementService(private val logger: Logger,
      * a ship of a given type may ultimately be placed.
      * Validation is done by ensuring the resulting list is of the same size as the ship type.
      *
-     * @param availableCoordinates is the list of coordinates where a ship may be placed.
+     * @param availableCoordinateEntities is the list of coordinates where a ship may be placed.
      * @param axis is the plane of the ship, i.e. vertical or horizontal.
      * @param shipType is which ship type it is, i.e. Battleship, Cruiser etc.
      *                 They have different sizes, and the resulting list needs to match that.
      */
-    private fun getShipComponentCoordinates(availableCoordinates: List<Coordinate>,
+    private fun getShipComponentCoordinates(availableCoordinateEntities: List<CoordinateEntity>,
                                             axis: Axis,
-                                            shipType: ShipType): List<List<Coordinate>> {
+                                            shipType: ShipType): List<List<CoordinateEntity>> {
 
-        return availableCoordinates.shuffled().mapNotNull { index ->
+        return availableCoordinateEntities.shuffled().mapNotNull { index ->
             val allowedRange = if (axis == VERTICAL) {
                 index.vertical_position until index.vertical_position + shipType.size
             } else index.horizontalPositionAsInt() until (index.horizontalPositionAsInt() + shipType.size)
 
-            availableCoordinates.filter {
+            availableCoordinateEntities.filter {
                 if (axis == VERTICAL) {
                     it isVerticallyAlignedWith index && it.vertical_position in allowedRange
                 } else {
                     it isHorizontallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
-                throw ShipPlacementException("Unable to generate a list of coordinates on a $axis plane for $shipType!")
+                throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")
             }.takeIf {
                 it.size == shipType.size
             }
@@ -99,15 +98,15 @@ class ShipPlacementService(private val logger: Logger,
      * picks a random column, then filters out coordinates that would be too close
      * to the edge for the current ship.
      */
-    private fun getCoordinatesEligibleForIndexPosition(availableCoordinates: List<Coordinate>,
+    private fun getCoordinatesEligibleForIndexPosition(availableCoordinateEntities: List<CoordinateEntity>,
                                                        axis: Axis,
-                                                       shipType: ShipType): List<Coordinate> {
+                                                       shipType: ShipType): List<CoordinateEntity> {
 
         val blacklist = if (axis == VERTICAL) {
             MAX_BOARD_LENGTH until shipType.size
         } else 1..shipType.size
 
-        return availableCoordinates.filter { coordinate ->
+        return availableCoordinateEntities.filter { coordinate ->
             when (axis) {
                 VERTICAL -> coordinate.vertical_position !in blacklist
                 HORIZONTAL -> coordinate.horizontalPositionAsInt() !in blacklist
@@ -118,11 +117,11 @@ class ShipPlacementService(private val logger: Logger,
     /**
      * Returns a list of coordinates that are not occupied by any ship components.
      */
-    private fun getAvailableCoordinatesForPlayer(playerId: Int): List<Coordinate> {
+    private fun getAvailableCoordinatesForPlayer(playerId: Int): List<CoordinateEntity> {
         val allCoordinates = coordinateDao.findAll()
-        val occupiedCoordinates = playerShipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
-            playerShipComponentDao.findByPlayerShipId(ship.id).map { component ->
-                component.coordinate
+        val occupiedCoordinates = shipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
+            componentDao.findByPlayerShipId(ship.id).map { component ->
+                component.coordinateEntity
             }
         }
 

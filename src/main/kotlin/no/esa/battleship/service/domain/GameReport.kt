@@ -1,7 +1,8 @@
 package no.esa.battleship.service.domain
 
-import no.esa.battleship.enums.Strategy
+import no.esa.battleship.repository.entity.GameEntity
+import no.esa.battleship.repository.entity.ResultEntity
 
-data class GameReport(val game: Game,
+data class GameReport(val gameEntity: GameEntity,
                       val playerInfos: List<PlayerInfo>,
-                      val result: Result)
+                      val resultEntity: ResultEntity)

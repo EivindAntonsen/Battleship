@@ -63,9 +63,17 @@ dependencies {
     developmentOnly("$springBoot:spring-boot-devtools")
     implementation("$springBoot:spring-boot-starter-jdbc")
     implementation("$springBoot:spring-boot-starter-web")
+    implementation("$springBoot:spring-boot-starter-aop")
     testImplementation("$springBoot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
+    testImplementation(group = jetBrains, name = "kotlin-test-annotations-common", version = "1.3.71")
+    testImplementation(group = jetBrains, name = "kotlin-test", version = "1.3.71")
+    testImplementation(group = jetBrains, name = "kotlin-test-common", version = "1.3.71")
+    //testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.6.2")
+    testImplementation(group = "io.mockk", name = "mockk", version = "1.10.0")
+    testImplementation(group = "com.willowtreeapps.assertk", name ="assertk", version = "0.22")
+    testImplementation(group = "com.h2database", name = "h2", version = "1.4.200")
 
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin")
     implementation(group = jetBrains, name = "kotlin-reflect")
@@ -80,7 +88,7 @@ dependencies {
 tasks {
     create<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("buildKotlinClient") {
         val generationPath = "$buildDir/generated-sources"
-        val basePackage = "no.esa.battleship"
+        val basePackage = "battleship"
 
         delete(generationPath)
         generatorName.set("kotlin-spring")
@@ -88,14 +96,14 @@ tasks {
         outputDir.set(generationPath)
         apiPackage.set("$basePackage.api")
         modelPackage.set("$basePackage.model")
+        configOptions.set(mapOf(
+                "dateLibrary" to "java8",
+                "swaggerAnnotations" to "true",
+                "interfaceOnly" to "true"))
         systemProperties.set(mapOf(
                 "apis" to "",
                 "models" to "",
                 "supportingFiles" to "false"))
-        configOptions.set(mapOf(
-                "interfaceOnly" to "true",
-                "dateLibrary" to "java8",
-                "swaggerAnnotations" to "true"))
     }
 
     withType<KotlinCompile> {

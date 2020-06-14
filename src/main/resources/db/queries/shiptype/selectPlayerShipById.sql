@@ -1,3 +1,3 @@
 select *
-from battleship.player_ship ps
-where ps.id = :id
+from battleship.ship
+where id = :id
