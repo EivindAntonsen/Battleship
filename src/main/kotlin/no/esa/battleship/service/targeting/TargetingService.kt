@@ -6,7 +6,6 @@ import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipStatus
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.enums.TargetingMode
-import no.esa.battleship.enums.TargetingMode.DESTROY
 import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.NoValidCoordinatesException
 import no.esa.battleship.repository.component.IComponentDao
@@ -19,8 +18,11 @@ import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.repository.targetedship.ITargetedShipDao
 import no.esa.battleship.repository.targeting.ITargetingDao
 import no.esa.battleship.repository.turn.ITurnDao
+import no.esa.battleship.service.domain.Components
+import no.esa.battleship.service.domain.ShipWithComponents
 import no.esa.battleship.utils.isAdjacentWith
 import no.esa.battleship.utils.validateElements
+import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
 @Service
@@ -30,15 +32,13 @@ class TargetingService(private val componentDao: IComponentDao,
                        private val shipDao: IShipDao,
                        private val targetingDao: ITargetingDao,
                        private val targetedShipDao: ITargetedShipDao,
-                       private val turnDao: ITurnDao) : ITargetingService {
+                       private val turnDao: ITurnDao,
+                       private val logger: Logger) : ITargetingService {
 
     override fun getTargetCoordinate(targeting: TargetingEntity): CoordinateEntity {
-        return when (targeting.targetingMode) {
-            SEEK -> seek(targeting)
-            DESTROY -> {
-                destroy(targeting)
-            }
-        }
+        return if (targeting.targetingMode == SEEK) {
+            seek(targeting)
+        } else destroy(targeting)
     }
 
     private fun seek(targeting: TargetingEntity): CoordinateEntity {
@@ -47,77 +47,78 @@ class TargetingService(private val componentDao: IComponentDao,
             it.coordinateEntity
         }
         val intactShipTypes = getIntactShipTypes(targeting)
-
-        val rankedCoordinatesByShipType = scoreAvailableCoordinatesForShipTypes(availableCoordinates, intactShipTypes)
-
-        val scoreMaps = rankedCoordinatesByShipType.filterKeys { shipType ->
-            shipType in intactShipTypes
-        }.map { (_, scoreMap) ->
-            scoreMap
-        }
-
-        return combineScoreMaps(scoreMaps).filterKeys {
-            it !in previousCoordinates
+        val scoreMap = scoreCoordinatesForShipTypes(availableCoordinates, intactShipTypes)
+        val highestRankingCoordinate = scoreMap.filter { (coordinate, _) ->
+            coordinate !in previousCoordinates
         }.maxBy { (_, score) ->
             score
-        }?.key ?: throw NoValidCoordinatesException("Found no suitable coordinates!")
+        }?.key
+
+        return if (scoreMap.isEmpty() && availableCoordinates.isNotEmpty()) {
+            logger.warn("Unable to score remaining coordinates. Selecting randomly...")
+
+            availableCoordinates.shuffled().first()
+
+        } else highestRankingCoordinate.let { coordinateEntity ->
+            if (coordinateEntity == null) {
+                val message = when {
+                    availableCoordinates.isEmpty() ->
+                        "There are no available coordinates left. Game should've ended by now!"
+
+                    intactShipTypes.isNotEmpty() && availableCoordinates.isEmpty() ->
+                        "There are intact ships remaining, but no available coordinates!"
+
+                    scoreMap.isNotEmpty() && highestRankingCoordinate == null ->
+                        "Scoremap is not empty, but it still couldn't select a highest ranking coordinate!"
+
+                    else -> "Couldn't find coordinate due to an unknown cause!"
+                }
+
+                throw NoValidCoordinatesException(this::class, ::seek, message)
+            } else coordinateEntity
+        }
     }
 
     private fun destroy(targeting: TargetingEntity): CoordinateEntity {
-        val targetedShips = targetedShipDao.findByTargetingId(targeting.id)
-        val remainingShipTypes = shipStatusDao.findAll(targeting.targetPlayerId)
-                .filter { (_, status) ->
-                    status == ShipStatus.INTACT
-                }.map { (shipEntity, _) ->
-                    ShipType.fromInt(shipEntity.shipTypeId)
-                }
         val allCoordinates = coordinateDao.findAll()
         val previousTurns = turnDao.getPreviousTurnsForPlayer(targeting.playerId).sortedBy { it.gameTurn }
-        val previouslyStruckCoordinates = previousTurns.map { turn ->
-            turn.coordinateEntity
-        }
+        val previouslyAttemptedCoordinates = previousTurns.map { it.coordinateEntity }
+        val availableCoordinates = allCoordinates.filter { it !in previouslyAttemptedCoordinates }
+        val struckCoordinatesOnCurrentlyTargetedShips = findCurrentlyTargetedShipsWithComponents(targeting)
+                .filter { ship ->
+                    ship.components.any { it.coordinateEntity in previouslyAttemptedCoordinates }
+                }.flatMap { ship ->
+                    ship.components
+                            .filter { it.isDestroyed }
+                            .map { it.coordinateEntity }
+                }
 
-        // Find the coordinates that led to each discovery of a ship.
-        // This is to be able to find their adjacent coordinates,
-        // and to limit the knowledge of enemy ships to confirmed hits.
-        val initiallyHitCoordinatesForTargetedShips = targetedShips.map {
-            val shipEntity = shipDao.find(it.shipId)
-            componentDao.findByPlayerShipId(shipEntity.id)
-        }.mapNotNull { components ->
-            components.firstOrNull { componentEntity ->
-                componentEntity.coordinateEntity in previouslyStruckCoordinates
-            }
-        }.map { componentEntity ->
-            componentEntity.coordinateEntity
-        }
-
-        val coordinatesAdjacentWithPreviousHits = allCoordinates.filter { coordinateEntity ->
-            coordinateEntity !in previouslyStruckCoordinates
-        }.filter { coordinateEntity ->
-            initiallyHitCoordinatesForTargetedShips.any { struckCoordinateEntity ->
-                coordinateEntity isAdjacentWith struckCoordinateEntity
+        val coordinatesAdjacentWithPreviousHits = availableCoordinates.filter { availableCoordinate ->
+            struckCoordinatesOnCurrentlyTargetedShips.any { struckCoordinate ->
+                struckCoordinate isAdjacentWith availableCoordinate
             }
         }
 
-        val scoreMapsByShipRemainingTypes = scoreAvailableCoordinatesForShipTypes(coordinatesAdjacentWithPreviousHits,
-                                                                                  remainingShipTypes)
+        if (coordinatesAdjacentWithPreviousHits.isEmpty()) {
+            logger.warn("No available coordinates adjacent with previous hits found. Maybe all options are exhausted?")
+        }
 
-        return scoreMapsByShipRemainingTypes.map { (_, scoreMaps) ->
-            scoreMaps
-        }.let { scoreMaps ->
-            combineScoreMaps(scoreMaps)
-        }.maxBy { (_, score) ->
-            score
-        }?.key ?: throw NoValidCoordinatesException("Found no suitable coordinates!")
+        return coordinatesAdjacentWithPreviousHits
+                .shuffled()
+                .firstOrNull()
+                ?: throw NoValidCoordinatesException(this::class,
+                                                     ::destroy,
+                                                     "Found no suitable coordinates!")
     }
 
-    private fun findDestroyedCoordinates(targeting: TargetingEntity): List<CoordinateEntity> {
-        return targetedShipDao.findByTargetingId(targeting.id).flatMap { targetedShip ->
-            componentDao.findByPlayerShipId(targetedShip.shipId)
-        }.filter { component ->
-            component.isDestroyed
-        }.map { component ->
-            component.coordinateEntity
+    private fun findCurrentlyTargetedShipsWithComponents(targeting: TargetingEntity): List<ShipWithComponents> {
+        return targetedShipDao.findByTargetingId(targeting.id).map { targetedShipEntity ->
+            val shipEntity = shipDao.find(targetedShipEntity.shipId)
+            val componentEntities = componentDao.findByPlayerShipId(shipEntity.id)
+            val shipType = ShipType.fromInt(shipEntity.shipTypeId)
+            val components = Components(shipType, componentEntities)
+
+            ShipWithComponents(shipEntity, components)
         }
     }
 
@@ -131,6 +132,7 @@ class TargetingService(private val componentDao: IComponentDao,
 
     private fun combineScoreMaps(scoreMaps: List<Map<CoordinateEntity, Int>>): Map<CoordinateEntity, Int> {
         return scoreMaps.fold(mutableMapOf<CoordinateEntity, Int>()) { map, otherMap ->
+
             otherMap.forEach { (coordinate, score) ->
                 map.merge(coordinate, score, Integer::sum)
             }
@@ -149,29 +151,52 @@ class TargetingService(private val componentDao: IComponentDao,
         }
     }
 
-    private fun scoreAvailableCoordinatesForShipTypes(availableCoordinates: List<CoordinateEntity>,
-                                                      shipTypes: List<ShipType>): Map<ShipType, Map<CoordinateEntity, Int>> {
+    private fun scoreCoordinates(availableCoordinates: List<CoordinateEntity>,
+                                 shipTypes: List<ShipType>,
+                                 axis: Axis): Map<ShipType, Map<CoordinateEntity, Int>> {
+
+        if (availableCoordinates.isEmpty()) throw RuntimeException("There are no coordinates to score!")
+
         return shipTypes.map { shipType ->
-            shipType to availableCoordinates.groupBy {
-                it.horizontalPositionAsInt()
-            }.mapNotNull { (_, coordinates) ->
-                coordinates.sortedBy { coordinate ->
-                    coordinate.vertical_position
+            shipType to availableCoordinates.groupBy { coordinateEntity ->
+                when (axis) {
+                    VERTICAL -> coordinateEntity.vertical_position
+                    HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
+                }
+            }.flatMap { (_, coordinates) ->
+                coordinates.sortedBy { coordinateEntity ->
+                    when (axis) {
+                        VERTICAL -> coordinateEntity.vertical_position
+                        HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
+                    }
                 }.mapIndexedNotNull { index, _ ->
                     if (index + shipType.size < coordinates.size) {
                         (index..(index + shipType.size)).map {
                             coordinates[it]
-                        }.takeIf {
-                            coordinatesAreAdjacent(it)
-                        }
+                        }.takeIf { coordinatesAreAdjacent(it) }
                     } else null
                 }.flatten()
-            }.flatten()
+            }
         }.toMap().mapValues { (_, coordinates) ->
-            coordinates.groupingBy {
-                it
+            coordinates.groupingBy { coordinateEntity ->
+                coordinateEntity
             }.eachCount()
         }
+    }
+
+    private fun scoreCoordinatesForShipTypes(availableCoordinates: List<CoordinateEntity>,
+                                             shipTypes: List<ShipType>): Map<CoordinateEntity, Int> {
+        val verticalScores = scoreCoordinates(availableCoordinates,
+                                              shipTypes,
+                                              VERTICAL).map { (_, scoreMap) -> scoreMap }
+        val horizontalScores = scoreCoordinates(availableCoordinates,
+                                                shipTypes,
+                                                HORIZONTAL).map { (_, scoreMap) -> scoreMap }
+
+        val verticalScoreMap = combineScoreMaps(verticalScores)
+        val horizontalScoreMap = combineScoreMaps(horizontalScores)
+
+        return combineScoreMaps(listOf(verticalScoreMap, horizontalScoreMap))
     }
 
     private fun coordinatesAreAdjacent(coordinates: List<CoordinateEntity>): Boolean {
@@ -187,9 +212,7 @@ class TargetingService(private val componentDao: IComponentDao,
                 HORIZONTAL -> coordinate.horizontalPositionAsInt()
                 VERTICAL -> coordinate.vertical_position
             }
-        }.validateElements { current, next ->
-            current isAdjacentWith next
-        }
+        }.validateElements { current, next -> current isAdjacentWith next }
     }
 
     override fun getTargeting(playerId: Int): TargetingEntity {

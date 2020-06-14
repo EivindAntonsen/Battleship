@@ -1,3 +1,9 @@
 package no.esa.battleship.exceptions
 
-class NoSuchGameException(gameId: Int) : RuntimeException("No game found for id $gameId!")
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+
+class NoSuchGameException(override val callingClass: KClass<*>,
+                          override val callingFunction: KFunction<*>,
+                          override val message: String? = null,
+                          override val cause: Throwable? = null) : GameStateException()

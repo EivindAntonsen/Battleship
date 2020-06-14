@@ -51,6 +51,8 @@ class PlayerStrategyDao(private val jdbcTemplate: JdbcTemplate) : IPlayerStrateg
 
         return namedTemplate.queryForObject(query, parameters) { rs, _ ->
             Strategy.fromInt(rs.getInt(STRATEGY_ID))
-        } ?: throw NoSuchStrategyException(playerId)
+        } ?: throw NoSuchStrategyException(this::class,
+                                           ::find,
+                                           "No strategy found for player with id $playerId!")
     }
 }

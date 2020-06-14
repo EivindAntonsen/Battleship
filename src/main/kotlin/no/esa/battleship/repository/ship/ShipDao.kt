@@ -54,7 +54,7 @@ class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
             val shipTypeId = rs.getInt(SHIP_TYPE_ID)
 
             ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
-        } ?: throw NoSuchShipException(id)
+        } ?: throw NoSuchShipException(this::class, ::find, "Found no ship with id $id!")
     }
 
     @Synchronized

@@ -44,7 +44,7 @@ class GameDao(private val jdbcTemplate: JdbcTemplate) : IGameDao {
             }
 
             GameEntity(gameId, dateTime, gameSeriesId, isConcluded)
-        } ?: throw NoSuchGameException(gameId)
+        } ?: throw NoSuchGameException(this::class, ::get, "No game found with id $gameId!")
     }
 
     override fun isGameConcluded(gameId: Int): Boolean = get(gameId).isConcluded
