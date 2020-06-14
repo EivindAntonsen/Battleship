@@ -19,13 +19,13 @@ class LogAspect {
         val args = getArgs(joinPoint)
         val signature = getSignature(joinPoint)
 
-        logger.info("Call \t\t${signature}\t$args")
+        logger.debug("Call \t\t${signature}\t$args")
 
         val (result, duration) = executeAndMeasureTimeMillis {
             joinPoint.proceed()
         }
 
-        logger.info("Response \t${result.toString().abbreviate()} in ${duration}ms.")
+        logger.debug("Response \t${result.toString().abbreviate()} in ${duration}ms.")
 
         return result
     }

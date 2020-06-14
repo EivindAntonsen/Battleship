@@ -112,25 +112,24 @@ class GamePlayService(private val playerDao: IPlayerDao,
         if (playerHasRemainingShips(currentPlayer.id)) {
             val targeting = targetingService.getTargeting(currentPlayer.id)
             val targetCoordinate = targetingService.getTargetCoordinate(targeting)
-
             val targetedShips = targetingService.findTargetedShips(targeting.id)
             val targetedShipIds = targetedShips.map { it.shipId }
-
             val allEnemyShips = shipDao.findAllShipsForPlayer(targeting.targetPlayerId)
             val struckShipWithComponents = getStruckShipWithComponents(allEnemyShips, targetCoordinate)
 
             if (struckShipWithComponents != null) {
+                logger.info("Turn $gameTurn,\tplayer ${targeting.playerId} - shot was a HIT.")
                 val struckComponent = struckShipWithComponents.components.first { componentEntity ->
                     componentEntity.coordinateEntity == targetCoordinate
                 }
 
                 if (targeting.targetingMode != DESTROY) {
-                    logger.info("Setting targeting mode to DESTROY.")
+                    logger.info("\t\t\tplayer ${targeting.playerId} - Setting targeting mode to DESTROY.")
                     targetingService.updateTargetingMode(targeting.playerId, DESTROY)
                 }
 
                 if (struckComponent.shipId !in targetedShipIds) {
-                    logger.info("Adding ship to targeted ships.")
+                    logger.info("\t\t\tplayer ${targeting.playerId} - Adding ship to targeted ships.")
                     targetingService.updateTargetingWithNewShipId(targeting.id, struckShipWithComponents.ship.id)
                 }
 
@@ -140,10 +139,9 @@ class GamePlayService(private val playerDao: IPlayerDao,
                 val struckShipHasNoIntactComponentsLeft = updatedShipWithComponents.components.all { it.isDestroyed }
 
                 if (struckShipHasNoIntactComponentsLeft) {
-                    logger.info("Struck ship has no components left.")
-                    logger.info("Updating ship status to DESTROYED.")
+                    logger.info("\t\t\tplayer ${targeting.playerId} - Updating ship status to DESTROYED.")
                     shipStatusDao.update(updatedShipWithComponents.ship.id, DESTROYED)
-                    logger.info("Removing ship from targeted ships.")
+                    logger.info("\t\t\tplayer ${targeting.playerId} - Removing ship from targeted ships.")
                     targetingService.removeShipIdFromTargeting(targeting.id, struckComponent.shipId)
                 }
 
@@ -151,7 +149,7 @@ class GamePlayService(private val playerDao: IPlayerDao,
                 val updatedTargetedShips = targetingService.findTargetedShips(updatedTargeting.id)
 
                 if (updatedTargetedShips.isEmpty()) {
-                    logger.info("Setting targeting mode back to SEEK")
+                    logger.info("\t\t\tplayer ${targeting.playerId} - Setting targeting mode back to SEEK")
                     targetingService.updateTargetingMode(targeting.playerId, SEEK)
                 }
 
@@ -165,7 +163,10 @@ class GamePlayService(private val playerDao: IPlayerDao,
                                 targetCoordinate.id,
                                 false,
                                 gameTurn)
-        } else gameDao.conclude(currentPlayer.gameId)
+        } else {
+            logger.info("\t\t\tplayer ${currentPlayer.id} wins!")
+            gameDao.conclude(currentPlayer.gameId)
+        }
     }
 
     private fun getShipWithComponents(id: Int): ShipWithComponents {

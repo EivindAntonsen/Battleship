@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository
 class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
@@ -19,6 +20,7 @@ class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
         const val PRIMARY_KEY = "id"
         const val GAME_ID = "game_id"
         const val WINNING_PLAYER_ID = "winning_player_id"
+        const val DATETIME = "datetime"
     }
 
     private val namedParameterJdbcTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
@@ -27,6 +29,7 @@ class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
     @Logged
     @DataAccess
     override fun save(gameId: Int, winningPlayerId: Int?): ResultEntity {
+        val dateTime = LocalDateTime.now()
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             schemaName = SCHEMA_NAME
             tableName = TABLE_NAME
@@ -37,11 +40,12 @@ class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
             winningPlayerId?.let {
                 addValue(WINNING_PLAYER_ID, it)
             }
+            addValue(DATETIME, dateTime)
         }
 
         val id = simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
 
-        return ResultEntity(id, gameId, winningPlayerId)
+        return ResultEntity(id, gameId, winningPlayerId, dateTime)
     }
 
     @Logged
@@ -55,7 +59,8 @@ class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
         return namedParameterJdbcTemplate.queryForObject(query, parameters) { rs, _ ->
             ResultEntity(rs.getInt(PRIMARY_KEY),
                          rs.getInt(GAME_ID),
-                         rs.getInt(WINNING_PLAYER_ID))
+                         rs.getInt(WINNING_PLAYER_ID),
+                         rs.getTimestamp(DATETIME).toLocalDateTime())
         }!! //fixme
     }
 
@@ -67,7 +72,8 @@ class ResultDao(private val jdbcTemplate: JdbcTemplate) : IResultDao {
         return jdbcTemplate.query(query) { rs, _ ->
             ResultEntity(rs.getInt(PRIMARY_KEY),
                          rs.getInt(GAME_ID),
-                         rs.getInt(WINNING_PLAYER_ID))
+                         rs.getInt(WINNING_PLAYER_ID),
+                         rs.getTimestamp(DATETIME).toLocalDateTime())
         }
     }
 }

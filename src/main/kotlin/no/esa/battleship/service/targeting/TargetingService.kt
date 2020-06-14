@@ -55,7 +55,7 @@ class TargetingService(private val componentDao: IComponentDao,
         }?.key
 
         return if (scoreMap.isEmpty() && availableCoordinates.isNotEmpty()) {
-            logger.warn("Unable to score remaining coordinates. Selecting randomly...")
+            logger.warn("\t\t\tplayer ${targeting.playerId} - Unable to score remaining coordinates. Selecting randomly...")
 
             availableCoordinates.shuffled().first()
 
