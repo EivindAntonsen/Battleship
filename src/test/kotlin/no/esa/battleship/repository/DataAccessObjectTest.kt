@@ -41,7 +41,7 @@ internal class DataAccessObjectTest {
     inner class CoordinateDaoTests {
         @Test
         fun `findAll should return a list of 100 coordinates`() {
-            assert(coordinateDao.findAll().size == 100)
+            assert(coordinateDao.getAll().size == 100)
         }
     }
 
@@ -77,14 +77,14 @@ internal class DataAccessObjectTest {
     inner class PlayerDaoTests {
         @Test
         fun `find should find a player that belongs to a game`() {
-            val player = playerDao.find(TestData.playerOneId)
+            val player = playerDao.get(TestData.playerOneId)
 
             assert(player.gameId == TestData.gameId)
         }
 
         @Test
         fun `findPlayersInGame should return players sharing a gameId`() {
-            val players = playerDao.findPlayersInGame(TestData.gameId)
+            val players = playerDao.getPlayersInGame(TestData.gameId)
             val playersGameIdIsIdentical = players.map { it.gameId }.distinct().size == 1
 
             assert(playersGameIdIsIdentical)
@@ -94,7 +94,7 @@ internal class DataAccessObjectTest {
         fun `save should save a new player to an existing game`() {
             val playerId = playerDao.save(TestData.gameId)
 
-            assert(playerDao.find(playerId).gameId == TestData.gameId)
+            assert(playerDao.get(playerId).gameId == TestData.gameId)
         }
     }
 
@@ -102,7 +102,7 @@ internal class DataAccessObjectTest {
     inner class ComponentDaoTests {
         @Test
         fun `findByPlayerShipId should return a list of components`() {
-            val components = playerShipComponentDao.findByPlayerShipId(1)
+            val components = playerShipComponentDao.getByShipId(1)
             val componentsSharePlayerShipId = components.map {
                 it.shipId
             }.distinct().size == 1
@@ -119,7 +119,7 @@ internal class DataAccessObjectTest {
 
         @Test
         fun `findByGameId should return all components who share game id that aren't destroyed`() {
-            val components = playerShipComponentDao.findByGameId(TestData.gameId)
+            val components = playerShipComponentDao.getByGameId(TestData.gameId)
 
             assert(components.size == 32)
         }
@@ -129,14 +129,14 @@ internal class DataAccessObjectTest {
     inner class ShipDaoTests {
         @Test
         fun `find should retrieve a ship by its id`() {
-            val ship = playerShipDao.find(1)
+            val ship = playerShipDao.get(1)
 
             assert(ship.playerId == 1)
         }
 
         @Test
         fun `findAllShipsForPlayer should return a list of all ships sharing playerId`() {
-            val ships = playerShipDao.findAllShipsForPlayer(1)
+            val ships = playerShipDao.getAllShipsForPlayer(1)
 
             assert(ships.size == 5)
         }
@@ -145,7 +145,7 @@ internal class DataAccessObjectTest {
         fun `save should create a new row`() {
             val ship = playerShipDao.save(1, ShipType.CARRIER.id)
 
-            playerShipDao.find(ship.id)
+            playerShipDao.get(ship.id)
         }
     }
 
@@ -153,7 +153,7 @@ internal class DataAccessObjectTest {
     inner class PlayerStrategyDaoTests {
         @Test
         fun `find should retrieve an existing player strategy entry`() {
-            val strategy = playerStrategyDao.find(TestData.playerOneId)
+            val strategy = playerStrategyDao.get(TestData.playerOneId)
 
             assert(strategy == Strategy.RANDOMIZER)
         }

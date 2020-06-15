@@ -22,8 +22,8 @@ class CoordinateDao(private val jdbcTemplate: JdbcTemplate) : ICoordinateDao {
     @Cacheable("boardCoordinates")
     @Logged
     @DataAccess
-    override fun findAll(): List<CoordinateEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findAll)
+    override fun getAll(): List<CoordinateEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getAll)
 
         return jdbcTemplate.query(query) { rs, _ ->
             CoordinateEntity(rs.getInt(PRIMARY_KEY),

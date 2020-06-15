@@ -27,8 +27,8 @@ class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
 
     @Logged
     @DataAccess
-    override fun findAllShipsForPlayer(playerId: Int): List<ShipEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findAllShipsForPlayer)
+    override fun getAllShipsForPlayer(playerId: Int): List<ShipEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getAllShipsForPlayer)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
@@ -43,8 +43,8 @@ class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
 
     @Logged
     @DataAccess
-    override fun find(id: Int): ShipEntity {
-        val query = QueryFileReader.readSqlFile(this::class, ::find)
+    override fun get(id: Int): ShipEntity {
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, id)
         }
@@ -54,7 +54,7 @@ class ShipDao(private val jdbcTemplate: JdbcTemplate) : IShipDao {
             val shipTypeId = rs.getInt(SHIP_TYPE_ID)
 
             ShipMapper.fromShipTypeIdWithParameters(id, playerId, shipTypeId)
-        } ?: throw NoSuchShipException(this::class, ::find, "Found no ship with id $id!")
+        } ?: throw NoSuchShipException(this::class, ::get, "Found no ship with id $id!")
     }
 
     @Synchronized

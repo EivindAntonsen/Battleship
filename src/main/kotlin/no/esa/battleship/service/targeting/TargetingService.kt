@@ -80,7 +80,7 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     private fun destroy(targeting: TargetingEntity): CoordinateEntity {
-        val allCoordinates = coordinateDao.findAll()
+        val allCoordinates = coordinateDao.getAll()
         val previousTurns = turnDao.getPreviousTurnsForPlayer(targeting.playerId).sortedBy { it.gameTurn }
         val previouslyAttemptedCoordinates = previousTurns.map { it.coordinateEntity }
         val availableCoordinates = allCoordinates.filter { it !in previouslyAttemptedCoordinates }
@@ -112,9 +112,9 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     private fun findCurrentlyTargetedShipsWithComponents(targeting: TargetingEntity): List<ShipWithComponents> {
-        return targetedShipDao.findByTargetingId(targeting.id).map { targetedShipEntity ->
-            val shipEntity = shipDao.find(targetedShipEntity.shipId)
-            val componentEntities = componentDao.findByPlayerShipId(shipEntity.id)
+        return targetedShipDao.getByTargetingId(targeting.id).map { targetedShipEntity ->
+            val shipEntity = shipDao.get(targetedShipEntity.shipId)
+            val componentEntities = componentDao.getByShipId(shipEntity.id)
             val shipType = ShipType.fromInt(shipEntity.shipTypeId)
             val components = Components(shipType, componentEntities)
 
@@ -123,7 +123,7 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     private fun getIntactShipTypes(targeting: TargetingEntity): List<ShipType> {
-        return shipStatusDao.findAll(targeting.targetPlayerId).filterValues { shipStatus ->
+        return shipStatusDao.getAll(targeting.targetPlayerId).filterValues { shipStatus ->
             shipStatus == ShipStatus.INTACT
         }.map { (shipEntity, _) ->
             ShipType.fromInt(shipEntity.shipTypeId)
@@ -146,7 +146,7 @@ class TargetingService(private val componentDao: IComponentDao,
             it.coordinateEntity
         }
 
-        return coordinateDao.findAll().filter { coordinate ->
+        return coordinateDao.getAll().filter { coordinate ->
             coordinate !in previousCoordinates
         }
     }
@@ -216,7 +216,7 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     override fun getTargeting(playerId: Int): TargetingEntity {
-        return targetingDao.find(playerId)
+        return targetingDao.get(playerId)
     }
 
     override fun updateTargetingMode(playerId: Int, targetingMode: TargetingMode): Int {
@@ -236,6 +236,6 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     override fun findTargetedShips(targetingId: Int): List<TargetedShipEntity> {
-        return targetedShipDao.findByTargetingId(targetingId)
+        return targetedShipDao.getByTargetingId(targetingId)
     }
 }

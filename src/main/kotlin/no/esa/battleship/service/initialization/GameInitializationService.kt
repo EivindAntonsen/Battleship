@@ -7,7 +7,6 @@ import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
-import no.esa.battleship.repository.targeting.ITargetingDao
 import no.esa.battleship.service.shipplacement.IShipPlacementService
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
@@ -42,7 +41,7 @@ class GameInitializationService(private val logger: Logger,
     }
 
     private fun newPlayer(gameEntity: GameEntity): PlayerEntity {
-        val currentPlayers = playerDao.findPlayersInGame(gameEntity.id)
+        val currentPlayers = playerDao.getPlayersInGame(gameEntity.id)
 
         return if (currentPlayers.size in 0..1) {
             val playerId = playerDao.save(gameEntity.id)

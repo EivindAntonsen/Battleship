@@ -52,29 +52,29 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
 
     @Logged
     @DataAccess
-    override fun findByGameId(gameId: Int): List<ComponentEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findByGameId)
+    override fun getByGameId(gameId: Int): List<ComponentEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getByGameId)
         val parameters = MapSqlParameterSource().apply {
             addValue(PlayerDao.GAME_ID, gameId)
         }
 
-        return find(query, parameters)
+        return get(query, parameters)
     }
 
     @Logged
     @DataAccess
-    override fun findByPlayerShipId(shipId: Int): List<ComponentEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findByPlayerShipId)
+    override fun getByShipId(shipId: Int): List<ComponentEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getByShipId)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_SHIP_ID, shipId)
         }
 
-        return find(query, parameters)
+        return get(query, parameters)
     }
 
     @Logged
     @DataAccess
-    fun find(query: String, parameterSource: MapSqlParameterSource): List<ComponentEntity> {
+    fun get(query: String, parameterSource: MapSqlParameterSource): List<ComponentEntity> {
         return namedTemplate.query(query, parameterSource) { rs, _ ->
             val coordinateId = rs.getInt(COORDINATE_ID)
             val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]

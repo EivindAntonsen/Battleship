@@ -9,5 +9,5 @@ interface IGameDao {
     fun get(gameId: Int): GameEntity
     fun isGameConcluded(gameId: Int): Boolean
     fun conclude(gameId: Int): Int
-    fun findGamesInSeries(gameSeriesId: UUID): List<GameEntity>
+    fun getGamesInSeries(gameSeriesId: UUID): List<GameEntity>
 }

@@ -28,8 +28,8 @@ class TargetingDao(private val jdbcTemplate: JdbcTemplate) : ITargetingDao {
 
     @Logged
     @DataAccess
-    override fun find(playerId: Int): TargetingEntity {
-        val query = QueryFileReader.readSqlFile(this::class, ::find)
+    override fun get(playerId: Int): TargetingEntity {
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }

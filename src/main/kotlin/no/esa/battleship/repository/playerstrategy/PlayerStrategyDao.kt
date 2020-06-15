@@ -43,8 +43,8 @@ class PlayerStrategyDao(private val jdbcTemplate: JdbcTemplate) : IPlayerStrateg
 
     @Logged
     @DataAccess
-    override fun find(playerId: Int): Strategy {
-        val query = QueryFileReader.readSqlFile(this::class, ::find)
+    override fun get(playerId: Int): Strategy {
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
@@ -52,7 +52,7 @@ class PlayerStrategyDao(private val jdbcTemplate: JdbcTemplate) : IPlayerStrateg
         return namedTemplate.queryForObject(query, parameters) { rs, _ ->
             Strategy.fromInt(rs.getInt(STRATEGY_ID))
         } ?: throw NoSuchStrategyException(this::class,
-                                           ::find,
+                                           ::get,
                                            "No strategy found for player with id $playerId!")
     }
 }

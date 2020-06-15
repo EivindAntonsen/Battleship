@@ -87,7 +87,7 @@ class GamePlayService(private val playerDao: IPlayerDao,
 
     private fun getPlayerInfo(player: PlayerEntity): PlayerInfo {
         return PlayerInfo(player,
-                          playerStrategyDao.find(player.id),
+                          playerStrategyDao.get(player.id),
                           getPerformanceAnalysis(player))
     }
 
@@ -109,10 +109,10 @@ class GamePlayService(private val playerDao: IPlayerDao,
     }
 
     override fun findRemainingPlayers(gameId: Int): List<PlayerEntity> {
-        return componentDao.findByGameId(gameId).map { shipComponent ->
-            val ship = shipDao.find(shipComponent.shipId)
+        return componentDao.getByGameId(gameId).map { shipComponent ->
+            val ship = shipDao.get(shipComponent.shipId)
 
-            playerDao.find(ship.playerId)
+            playerDao.get(ship.playerId)
         }.distinct()
     }
 
@@ -122,7 +122,7 @@ class GamePlayService(private val playerDao: IPlayerDao,
             val targetCoordinate = targetingService.getTargetCoordinate(targeting)
             val targetedShips = targetingService.findTargetedShips(targeting.id)
             val targetedShipIds = targetedShips.map { it.shipId }
-            val allEnemyShips = shipDao.findAllShipsForPlayer(targeting.targetPlayerId)
+            val allEnemyShips = shipDao.getAllShipsForPlayer(targeting.targetPlayerId)
 
             val isHit = getStruckShipWithComponents(allEnemyShips, targetCoordinate)?.let { struckShipWithComponents ->
                 logger.info("Turn $gameTurn,\tplayer ${targeting.playerId} - shot was a HIT.")
@@ -179,8 +179,8 @@ class GamePlayService(private val playerDao: IPlayerDao,
     }
 
     private fun getShipWithComponents(id: Int): ShipWithComponents {
-        val shipEntity = shipDao.find(id)
-        val componentEntities = componentDao.findByPlayerShipId(shipEntity.id)
+        val shipEntity = shipDao.get(id)
+        val componentEntities = componentDao.getByShipId(shipEntity.id)
         val components = Components(ShipType.fromInt(shipEntity.shipTypeId),
                                     componentEntities)
 
@@ -188,13 +188,13 @@ class GamePlayService(private val playerDao: IPlayerDao,
     }
 
     private fun playerHasRemainingShips(playerId: Int): Boolean {
-        return shipStatusDao.findAll(playerId).any { (_, status) ->
+        return shipStatusDao.getAll(playerId).any { (_, status) ->
             status == INTACT
         }
     }
 
     private fun getPlayersInGame(gameId: Int): Pair<PlayerEntity, PlayerEntity> {
-        return playerDao.findPlayersInGame(gameId).run {
+        return playerDao.getPlayersInGame(gameId).run {
             first() to last()
         }
     }
@@ -202,11 +202,11 @@ class GamePlayService(private val playerDao: IPlayerDao,
     private fun getStruckShipWithComponents(enemyShips: List<ShipEntity>,
                                             targetCoordinate: CoordinateEntity): ShipWithComponents? {
         return enemyShips.firstOrNull { ship ->
-            componentDao.findByPlayerShipId(ship.id).any { componentEntity ->
+            componentDao.getByShipId(ship.id).any { componentEntity ->
                 componentEntity.coordinateEntity == targetCoordinate
             }
         }?.let { ship ->
-            val componentEntities = componentDao.findByPlayerShipId(ship.id)
+            val componentEntities = componentDao.getByShipId(ship.id)
             val shipType = ShipType.fromInt(ship.shipTypeId)
             val components = Components(shipType, componentEntities)
 

@@ -81,8 +81,8 @@ class GameDao(private val jdbcTemplate: JdbcTemplate) : IGameDao {
 
     @Logged
     @DataAccess
-    override fun findGamesInSeries(gameSeriesId: UUID): List<GameEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findGamesInSeries)
+    override fun getGamesInSeries(gameSeriesId: UUID): List<GameEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getGamesInSeries)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_SERIES_ID, gameSeriesId)
         }

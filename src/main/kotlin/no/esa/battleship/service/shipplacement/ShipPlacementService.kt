@@ -118,9 +118,9 @@ class ShipPlacementService(private val logger: Logger,
      * Returns a list of coordinates that are not occupied by any ship components.
      */
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<CoordinateEntity> {
-        val allCoordinates = coordinateDao.findAll()
-        val occupiedCoordinates = shipDao.findAllShipsForPlayer(playerId).flatMap { ship ->
-            componentDao.findByPlayerShipId(ship.id).map { component ->
+        val allCoordinates = coordinateDao.getAll()
+        val occupiedCoordinates = shipDao.getAllShipsForPlayer(playerId).flatMap { ship ->
+            componentDao.getByShipId(ship.id).map { component ->
                 component.coordinateEntity
             }
         }

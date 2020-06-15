@@ -41,8 +41,8 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
 
     @Logged
     @DataAccess
-    override fun find(playerId: Int): PlayerEntity {
-        val query = QueryFileReader.readSqlFile(this::class, ::find)
+    override fun get(playerId: Int): PlayerEntity {
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(PRIMARY_KEY, playerId)
         }
@@ -54,8 +54,8 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
 
     @Logged
     @DataAccess
-    override fun findPlayersInGame(gameId: Int): List<PlayerEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findPlayersInGame)
+    override fun getPlayersInGame(gameId: Int): List<PlayerEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getPlayersInGame)
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
         }

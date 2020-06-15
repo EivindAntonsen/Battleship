@@ -55,8 +55,8 @@ class TargetedShipDao(private val jdbcTemplate: JdbcTemplate) : ITargetedShipDao
 
     @Logged
     @DataAccess
-    override fun findByTargetingId(targetingId: Int): List<TargetedShipEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findByTargetingId)
+    override fun getByTargetingId(targetingId: Int): List<TargetedShipEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getByTargetingId)
         val parameters = MapSqlParameterSource().apply {
             addValue(TARGETING_ID, targetingId)
         }

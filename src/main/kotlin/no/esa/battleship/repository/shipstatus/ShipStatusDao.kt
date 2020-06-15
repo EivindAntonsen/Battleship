@@ -28,8 +28,8 @@ class ShipStatusDao(private val jdbcTemplate: JdbcTemplate) : IShipStatusDao {
 
     @Logged
     @DataAccess
-    override fun find(shipId: Int): ShipStatus {
-        val query = QueryFileReader.readSqlFile(this::class, ::find)
+    override fun get(shipId: Int): ShipStatus {
+        val query = QueryFileReader.readSqlFile(this::class, ::get)
         val parameters = MapSqlParameterSource().apply {
             addValue(SHIP_ID, shipId)
         }
@@ -41,8 +41,8 @@ class ShipStatusDao(private val jdbcTemplate: JdbcTemplate) : IShipStatusDao {
 
     @Logged
     @DataAccess
-    override fun findAll(playerId: Int): Map<ShipEntity, ShipStatus> {
-        val query = QueryFileReader.readSqlFile(this::class, ::findAll)
+    override fun getAll(playerId: Int): Map<ShipEntity, ShipStatus> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getAll)
         val parameters = MapSqlParameterSource().apply {
             addValue(ShipDao.PLAYER_ID, playerId)
         }

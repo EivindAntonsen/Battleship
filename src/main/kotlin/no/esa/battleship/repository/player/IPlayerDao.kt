@@ -5,6 +5,6 @@ import no.esa.battleship.repository.entity.PlayerEntity
 interface IPlayerDao {
 
     fun save(gameId: Int): Int
-    fun findPlayersInGame(gameId: Int): List<PlayerEntity>
-    fun find(playerId: Int): PlayerEntity
+    fun getPlayersInGame(gameId: Int): List<PlayerEntity>
+    fun get(playerId: Int): PlayerEntity
 }
