@@ -20,6 +20,7 @@ import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.repository.turn.ITurnDao
 import no.esa.battleship.service.domain.*
 import no.esa.battleship.service.targeting.ITargetingService
+import no.esa.battleship.utils.executeAndMeasureTimeMillis
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -44,11 +45,15 @@ class GamePlayService(private val playerDao: IPlayerDao,
         targetingService.saveInitialTargeting(player1.id, player2.id, gameTurnId)
         targetingService.saveInitialTargeting(player2.id, player1.id, gameTurnId)
 
-        do {
-            gameTurnId++
+        val (_, runtime) = executeAndMeasureTimeMillis {
+            do {
+                gameTurnId++
 
-            executeGameTurn(player1, player2, gameTurnId)
-        } while (!gameDao.isGameConcluded(gameId))
+                executeGameTurn(player1, player2, gameTurnId)
+            } while (!gameDao.isGameConcluded(gameId))
+        }
+
+        logger.info("Concluded game in ${runtime}ms.")
 
         return getGameReport(game)
     }
@@ -93,7 +98,10 @@ class GamePlayService(private val playerDao: IPlayerDao,
         val missCount = previousTurns.filterNot { it.isHit }.count()
         val totalCount = hitCount + missCount
 
-        if (totalCount == 0) throw InvalidPerformanceException(playerEntity.id)
+        if (totalCount == 0) {
+            logger.error("${playerEntity.id} fired 0 shots in game ${playerEntity.gameId}!")
+            throw InvalidPerformanceException(playerEntity.id)
+        }
 
         val hitRate = hitCount.toDouble() / totalCount.toDouble()
 
@@ -115,10 +123,10 @@ class GamePlayService(private val playerDao: IPlayerDao,
             val targetedShips = targetingService.findTargetedShips(targeting.id)
             val targetedShipIds = targetedShips.map { it.shipId }
             val allEnemyShips = shipDao.findAllShipsForPlayer(targeting.targetPlayerId)
-            val struckShipWithComponents = getStruckShipWithComponents(allEnemyShips, targetCoordinate)
 
-            if (struckShipWithComponents != null) {
+            val isHit = getStruckShipWithComponents(allEnemyShips, targetCoordinate)?.let { struckShipWithComponents ->
                 logger.info("Turn $gameTurn,\tplayer ${targeting.playerId} - shot was a HIT.")
+
                 val struckComponent = struckShipWithComponents.components.first { componentEntity ->
                     componentEntity.coordinateEntity == targetCoordinate
                 }
@@ -130,7 +138,8 @@ class GamePlayService(private val playerDao: IPlayerDao,
 
                 if (struckComponent.shipId !in targetedShipIds) {
                     logger.info("\t\t\tplayer ${targeting.playerId} - Adding ship to targeted ships.")
-                    targetingService.updateTargetingWithNewShipId(targeting.id, struckShipWithComponents.ship.id)
+                    targetingService.updateTargetingWithNewShipId(targeting.id,
+                                                                  struckShipWithComponents.ship.id)
                 }
 
                 componentDao.update(struckComponent.id, true)
@@ -141,8 +150,10 @@ class GamePlayService(private val playerDao: IPlayerDao,
                 if (struckShipHasNoIntactComponentsLeft) {
                     logger.info("\t\t\tplayer ${targeting.playerId} - Updating ship status to DESTROYED.")
                     shipStatusDao.update(updatedShipWithComponents.ship.id, DESTROYED)
+
                     logger.info("\t\t\tplayer ${targeting.playerId} - Removing ship from targeted ships.")
-                    targetingService.removeShipIdFromTargeting(targeting.id, struckComponent.shipId)
+                    targetingService.removeShipIdFromTargeting(targeting.id,
+                                                               struckComponent.shipId)
                 }
 
                 val updatedTargeting = targetingService.getTargeting(targeting.playerId)
@@ -153,16 +164,14 @@ class GamePlayService(private val playerDao: IPlayerDao,
                     targetingService.updateTargetingMode(targeting.playerId, SEEK)
                 }
 
-                turnDao.save(targeting.playerId,
-                             targeting.targetPlayerId,
-                             targetCoordinate.id,
-                             true,
-                             gameTurn)
-            } else turnDao.save(targeting.playerId,
-                                targeting.targetPlayerId,
-                                targetCoordinate.id,
-                                false,
-                                gameTurn)
+                true
+            } ?: false
+
+            turnDao.save(targeting.playerId,
+                         targeting.targetPlayerId,
+                         targetCoordinate.id,
+                         isHit,
+                         gameTurn)
         } else {
             logger.info("\t\t\tplayer ${currentPlayer.id} wins!")
             gameDao.conclude(currentPlayer.gameId)

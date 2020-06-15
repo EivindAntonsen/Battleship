@@ -14,14 +14,12 @@ import java.util.*
 class GameController(private val gameInitializationService: IGameInitializationService,
                      private val gamePlayService: IGamePlayService) : GameApi {
 
-    @Logged
     override fun initializeNewGame(gameSeriesId: UUID?): ResponseEntity<Int> {
         val game = gameInitializationService.initializeNewGame(gameSeriesId)
 
         return ResponseEntity.ok(game.id)
     }
 
-    @Logged
     override fun playGame(gameId: Int?, gameSeriesId: UUID?): ResponseEntity<GameReportDTO> {
         val gameReport = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(gameSeriesId).id)
         val gameReportDTO = GameReportMapper.toDTO(gameReport)
