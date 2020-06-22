@@ -1,0 +1,33 @@
+components:
+  schemas:
+    TurnRequestDTO:
+      type: object
+      description: Contains instructions for where to shoot for a given player
+      properties:
+        gameId:
+          type: integer
+          format: int32
+        playerId:
+          type: integer
+          format: int32
+        coordinateId:
+          type: integer
+          format: int32
+          description: Which coordinate the current player wishes to strike
+      required:
+        - gameId
+        - playerId
+        - coordinateId
+    TurnResultDTO:
+      type: object
+      description: Contains information about the outcome of an executed turn
+      properties:
+        isHit:
+          type: boolean
+          description: Whether a ship was hit or not
+        didDestroyShip:
+          type: boolean
+          description: Whether a ship was destroyed or not
+      required:
+        - isHit
+        - didDestroyShip

@@ -1,0 +1,23 @@
+post:
+  summary: Executes a game turn
+  operationId: coordinate
+  tags:
+    - gamePlay
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "./gameplay/gamePlayDefinitions.yaml#/components/schemas/TurnRequestDTO"
+  responses:
+    200:
+      content:
+        application/json:
+          schema:
+            $ref: "./gameplay/gamePlayDefinitions.yaml#/components/schemas/TurnResultDTO"
+    500:
+      description: error payload
+      content:
+        application/json:
+          schema:
+            $ref: "./common/commonDefinition.yaml#/components/schemas/Error"
