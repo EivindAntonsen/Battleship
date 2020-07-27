@@ -72,12 +72,12 @@ class ShipPlacementService(private val logger: Logger,
 
         return availableCoordinateEntities.shuffled().mapNotNull { index ->
             val allowedRange = if (axis == VERTICAL) {
-                index.vertical_position until index.vertical_position + shipType.size
+                index.verticalPosition until index.verticalPosition + shipType.size
             } else index.horizontalPositionAsInt() until (index.horizontalPositionAsInt() + shipType.size)
 
             availableCoordinateEntities.filter {
                 if (axis == VERTICAL) {
-                    it isVerticallyAlignedWith index && it.vertical_position in allowedRange
+                    it isVerticallyAlignedWith index && it.verticalPosition in allowedRange
                 } else {
                     it isHorizontallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
                 }
@@ -108,7 +108,7 @@ class ShipPlacementService(private val logger: Logger,
 
         return availableCoordinateEntities.filter { coordinate ->
             when (axis) {
-                VERTICAL -> coordinate.vertical_position !in blacklist
+                VERTICAL -> coordinate.verticalPosition !in blacklist
                 HORIZONTAL -> coordinate.horizontalPositionAsInt() !in blacklist
             }
         }

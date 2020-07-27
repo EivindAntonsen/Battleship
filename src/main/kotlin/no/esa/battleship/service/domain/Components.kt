@@ -21,7 +21,7 @@ data class Components(private val shipType: ShipType,
             return components.map { it.coordinateEntity }.sortedBy { coordinate ->
                 when (getAxis(components)) {
                     HORIZONTAL -> coordinate.horizontalPositionAsInt()
-                    VERTICAL -> coordinate.vertical_position
+                    VERTICAL -> coordinate.verticalPosition
                 }
             }.validateElements { current, next ->
                 current isAdjacentWith next
@@ -33,7 +33,7 @@ data class Components(private val shipType: ShipType,
 
     private fun getAxis(components: List<ComponentEntity>): Axis {
         val verticalSpan = components.map {
-            it.coordinateEntity.vertical_position
+            it.coordinateEntity.verticalPosition
         }.distinct().size
         val horizontalSpan = components.map {
             it.coordinateEntity.horizontalPositionAsInt()

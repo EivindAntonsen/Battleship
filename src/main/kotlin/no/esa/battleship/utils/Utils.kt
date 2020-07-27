@@ -18,18 +18,18 @@ fun String.abbreviate(): String {
 }
 
 infix fun CoordinateEntity.isVerticallyAlignedWith(that: CoordinateEntity): Boolean {
-    return this.horizontal_position == that.horizontal_position
+    return this.horizontalPosition == that.horizontalPosition
 }
 
 infix fun CoordinateEntity.isHorizontallyAlignedWith(that: CoordinateEntity): Boolean {
-    return this.vertical_position == that.vertical_position
+    return this.verticalPosition == that.verticalPosition
 }
 
 infix fun CoordinateEntity.isAdjacentWith(that: CoordinateEntity): Boolean {
     return this isHorizontallyAlignedWith that &&
             this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 1) ||
             this isVerticallyAlignedWith that &&
-            this.vertical_position - that.vertical_position in listOf(-1, 1)
+            this.verticalPosition - that.verticalPosition in listOf(-1, 1)
 }
 
 fun <S, T : S> Iterable<T>.validateElements(validationFunction: (acc: S, T) -> Boolean): Boolean {

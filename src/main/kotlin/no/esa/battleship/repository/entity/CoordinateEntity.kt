@@ -3,8 +3,8 @@ package no.esa.battleship.repository.entity
 import no.esa.battleship.exceptions.NoSuchCoordinateException
 
 data class CoordinateEntity(val id: Int,
-                            val horizontal_position: Char,
-                            val vertical_position: Int) {
+                            val horizontalPosition: Char,
+                            val verticalPosition: Int) {
 
     companion object {
         val HORIZONTAL_POSITION_TO_INT = ('a'..'j').mapIndexed { index, char ->
@@ -13,6 +13,6 @@ data class CoordinateEntity(val id: Int,
     }
 
     fun horizontalPositionAsInt(): Int {
-        return HORIZONTAL_POSITION_TO_INT[horizontal_position] ?: throw NoSuchCoordinateException(horizontal_position)
+        return HORIZONTAL_POSITION_TO_INT[horizontalPosition] ?: throw NoSuchCoordinateException(horizontalPosition)
     }
 }

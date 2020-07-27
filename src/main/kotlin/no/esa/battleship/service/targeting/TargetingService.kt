@@ -160,13 +160,13 @@ class TargetingService(private val componentDao: IComponentDao,
         return shipTypes.map { shipType ->
             shipType to availableCoordinates.groupBy { coordinateEntity ->
                 when (axis) {
-                    VERTICAL -> coordinateEntity.vertical_position
+                    VERTICAL -> coordinateEntity.verticalPosition
                     HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
                 }
             }.flatMap { (_, coordinates) ->
                 coordinates.sortedBy { coordinateEntity ->
                     when (axis) {
-                        VERTICAL -> coordinateEntity.vertical_position
+                        VERTICAL -> coordinateEntity.verticalPosition
                         HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
                     }
                 }.mapIndexedNotNull { index, _ ->
@@ -210,7 +210,7 @@ class TargetingService(private val componentDao: IComponentDao,
         return coordinates.sortedBy { coordinate ->
             when (axis) {
                 HORIZONTAL -> coordinate.horizontalPositionAsInt()
-                VERTICAL -> coordinate.vertical_position
+                VERTICAL -> coordinate.verticalPosition
             }
         }.validateElements { current, next -> current isAdjacentWith next }
     }
