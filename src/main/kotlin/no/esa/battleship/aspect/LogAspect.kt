@@ -25,7 +25,7 @@ class LogAspect {
             joinPoint.proceed()
         }
 
-        logger.debug("Response \t${result.toString().abbreviate()} in ${duration}ms.")
+        logger.debug("Response \t${getResultAsSensibleString(result)}\tin ${duration}ms.")
 
         return result
     }
@@ -45,5 +45,35 @@ class LogAspect {
         return joinPoint.signature.toString()
                 .replace(" ", "\t")
                 .replace("no.esa.battleship.", "")
+    }
+
+    private fun getResultAsSensibleString(result: Any?): String {
+        return if (result != null) {
+            val value = result.toString().abbreviate()
+
+            StringBuffer().apply {
+                append(getClassName(result))
+
+                if (result is Collection<*>) {
+                    val type = getElementType(result)
+                    val size = result.size
+
+                    if (type == null) append("($size)")
+                    else append("<$type>($size)")
+                } else append("=$value")
+            }.toString().abbreviate()
+        } else "void"
+    }
+
+    private fun getClassName(obj: Any?): String {
+        return obj?.let {
+            it::class.simpleName ?: "void"
+        } ?: "null"
+    }
+
+    private fun getElementType(collection: Collection<*>): String? {
+        return collection.firstOrNull()?.let { element ->
+            element::class.simpleName
+        }
     }
 }

@@ -103,7 +103,7 @@ tasks {
         systemProperties.set(mapOf(
                 "apis" to "",
                 "models" to "",
-                "supportingFiles" to "false"))
+                "generateSupportingFiles" to "false"))
     }
 
     withType<KotlinCompile> {
