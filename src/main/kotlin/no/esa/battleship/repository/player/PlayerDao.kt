@@ -18,6 +18,7 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
         const val TABLE_NAME = "player"
         const val PRIMARY_KEY = "id"
         const val GAME_ID = "game_id"
+        const val PLAYER_TYPE_ID = "player_type_id"
     }
 
     val namedTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
@@ -25,7 +26,7 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(gameId: Int): Int {
+    override fun save(gameId: Int, playerTypeId: Int): Int {
         val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
             tableName = TABLE_NAME
             schemaName = SCHEMA_NAME
@@ -34,6 +35,7 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
 
         val parameters = MapSqlParameterSource().apply {
             addValue(GAME_ID, gameId)
+            addValue(PLAYER_TYPE_ID, playerTypeId)
         }
 
         return simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
@@ -48,7 +50,7 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
         }
 
         return namedTemplate.queryForObject(query, parameters) { rs, _ ->
-            PlayerEntity(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
+            PlayerEntity(rs.getInt(PRIMARY_KEY), rs.getInt(PLAYER_TYPE_ID), rs.getInt(GAME_ID))
         }!! //fixme
     }
 
@@ -61,7 +63,9 @@ class PlayerDao(private val jdbcTemplate: JdbcTemplate) : IPlayerDao {
         }
 
         return namedTemplate.query(query, parameters) { rs, _ ->
-            PlayerEntity(rs.getInt(PRIMARY_KEY), rs.getInt(GAME_ID))
+            PlayerEntity(rs.getInt(PRIMARY_KEY),
+                         rs.getInt(PLAYER_TYPE_ID),
+                         rs.getInt(GAME_ID))
         }
     }
 }

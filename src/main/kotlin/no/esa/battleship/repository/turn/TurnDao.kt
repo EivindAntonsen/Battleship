@@ -19,6 +19,7 @@ class TurnDao(private val jdbcTemplate: JdbcTemplate) : ITurnDao {
         const val SCHEMA_NAME = "battleship"
         const val TABLE_NAME = "turn"
         const val PRIMARY_KEY = "id"
+        const val GAME_ID = "game_id"
         const val GAME_TURN = "game_turn"
         const val PLAYER_ID = "player_id"
         const val TARGET_PLAYER_ID = "target_player_id"
@@ -31,7 +32,8 @@ class TurnDao(private val jdbcTemplate: JdbcTemplate) : ITurnDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(playerId: Int,
+    override fun save(gameId: Int,
+                      playerId: Int,
                       targetPlayerId: Int,
                       coordinateId: Int,
                       isHit: Boolean,
@@ -43,6 +45,7 @@ class TurnDao(private val jdbcTemplate: JdbcTemplate) : ITurnDao {
         }
 
         val parameters = MapSqlParameterSource().apply {
+            addValue(GAME_ID, gameId)
             addValue(PLAYER_ID, playerId)
             addValue(TARGET_PLAYER_ID, targetPlayerId)
             addValue(COORDINATE_ID, coordinateId)
@@ -53,25 +56,40 @@ class TurnDao(private val jdbcTemplate: JdbcTemplate) : ITurnDao {
         return simpleJdbcInsert.executeAndReturnKey(parameters).toInt()
     }
 
-    @Logged
     @DataAccess
-    override fun getPreviousTurnsForPlayer(playerId: Int): List<TurnEntity> {
-        val query = QueryFileReader.readSqlFile(this::class, ::getPreviousTurnsForPlayer)
+    override fun getPreviousTurnsByPlayerId(playerId: Int): List<TurnEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getPreviousTurnsByPlayerId)
         val parameters = MapSqlParameterSource().apply {
             addValue(PLAYER_ID, playerId)
         }
 
+        return getPreviousTurns(query, parameters)
+    }
+
+    @DataAccess
+    override fun getPreviousTurnsByGameId(gameId: Int): List<TurnEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getPreviousTurnsByGameId)
+        val parameters = MapSqlParameterSource().apply {
+            addValue(GAME_ID, gameId)
+        }
+
+        return getPreviousTurns(query, parameters)
+    }
+
+    @Logged
+    private fun getPreviousTurns(query: String, parameters: MapSqlParameterSource): List<TurnEntity> {
         return namedTemplate.query(query, parameters) { rs, _ ->
             val coordinate = CoordinateEntity(rs.getInt(COORDINATE_ID),
                                               rs.getString(CoordinateDao.X_COORDINATE)[0],
                                               rs.getInt(CoordinateDao.Y_COORDINATE))
 
             TurnEntity(rs.getInt(PRIMARY_KEY),
+                       rs.getInt(GAME_ID),
                        rs.getInt(GAME_TURN),
                        rs.getInt(PLAYER_ID),
                        rs.getInt(TARGET_PLAYER_ID),
                        coordinate,
                        rs.getBoolean(IS_HIT))
-        }.sortedBy { it.gameTurn }
+        }.sortedBy { it.id }
     }
 }

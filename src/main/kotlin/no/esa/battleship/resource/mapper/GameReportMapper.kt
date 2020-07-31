@@ -47,7 +47,7 @@ object GameReportMapper {
                    when (playerInfo.strategy) {
                        Strategy.RANDOMIZER -> Player.Strategy.RANDOMIZER
                        Strategy.DEFAULT -> Player.Strategy.DEFAULT
-                       Strategy.MATHEMATICIAN -> Player.Strategy.MATHEMATICIAN
+                       Strategy.HUMAN -> Player.Strategy.HUMAN
                    })
         }
     }

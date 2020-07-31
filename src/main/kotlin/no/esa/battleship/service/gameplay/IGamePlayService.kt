@@ -5,5 +5,4 @@ import no.esa.battleship.service.domain.GameReport
 
 interface IGamePlayService {
     fun playGame(gameId: Int): GameReport
-    fun findRemainingPlayers(gameId: Int): List<PlayerEntity>
 }

@@ -1,4 +1,5 @@
 select t.id,
+       game_id,
        game_turn,
        player_id,
        target_player_id,
@@ -8,4 +9,4 @@ select t.id,
        c.x_coordinate
 from battleship.turn t
          join battleship.coordinate c on t.coordinate_id = c.id
-where player_id = :player_id;
+where game_id = :game_id;

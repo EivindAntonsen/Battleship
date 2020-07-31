@@ -1,16 +1,16 @@
 post:
   summary: Initialize a new game
+  description: Initializes a new game by populating it with two player entities. Ships are set for minimum 1/2 players.
   operationId: initializeNewGame
   tags:
     - game
   parameters:
-    - name: gameSeriesId
+    - name: onlyAI
       in: query
-      description: The id of the series this game belongs to
-      required: false
+      description: Whether this game should be AI only or not. If set to false, only one AI player will be added to the game.
+      required: true
       schema:
-        type: string
-        format: uuid
+        type: boolean
   responses:
     200:
       description: The ID of the game

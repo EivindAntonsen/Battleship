@@ -1,6 +1,7 @@
 post:
-  summary: Plays a game
-  operationId: play-game
+  summary: Plays a game between two AIs
+  description: Let two AIs duke it out in a fast game of Battleship. If no gameId is specified, it initializes a new one.
+  operationId: play-ai-game
   tags:
     - game
   parameters:
@@ -11,13 +12,6 @@ post:
       schema:
         type: integer
         format: int32
-    - name: gameSeriesId
-      in: query
-      description: The id of the series this game belongs to
-      required: false
-      schema:
-        type: string
-        format: uuid
   responses:
     200:
       content:

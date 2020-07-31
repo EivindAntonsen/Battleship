@@ -43,7 +43,7 @@ class GameDao(private val jdbcTemplate: JdbcTemplate) : IGameDao {
                 UUID.fromString(it)
             }
 
-            GameEntity(gameId, dateTime, gameSeriesId, isConcluded)
+            GameEntity(gameId, dateTime, isConcluded)
         } ?: throw NoSuchGameException(this::class, ::get, "No game found with id $gameId!")
     }
 
@@ -92,7 +92,7 @@ class GameDao(private val jdbcTemplate: JdbcTemplate) : IGameDao {
             val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
             val isConcluded = rs.getBoolean(IS_CONCLUDED)
 
-            GameEntity(gameId, dateTime, gameSeriesId, isConcluded)
+            GameEntity(gameId, dateTime, isConcluded)
         }
     }
 }

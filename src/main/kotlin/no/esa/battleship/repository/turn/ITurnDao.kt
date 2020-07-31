@@ -4,11 +4,13 @@ import no.esa.battleship.repository.entity.TurnEntity
 
 interface ITurnDao {
 
-    fun save(playerId: Int,
+    fun save(gameId: Int,
+             playerId: Int,
              targetPlayerId: Int,
              coordinateId: Int,
              isHit: Boolean,
              gameTurn: Int): Int
 
-    fun getPreviousTurnsForPlayer(playerId: Int): List<TurnEntity>
+    fun getPreviousTurnsByPlayerId(playerId: Int): List<TurnEntity>
+    fun getPreviousTurnsByGameId(gameId: Int): List<TurnEntity>
 }

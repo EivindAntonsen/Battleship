@@ -5,5 +5,4 @@ import java.util.*
 
 data class GameEntity(val id: Int,
                       val dateTime: LocalDateTime,
-                      val gameSeriesId: UUID?,
                       val isConcluded: Boolean)

@@ -8,14 +8,12 @@ package no.esa.battleship.enums
  *           of strategies. Doesn't even attempt to account for recent hits.
  * @property DEFAULT is random, but also accounts for recent hits to follow up
  *           until it believes a ship has been sunk.
- * @property MIMIC simply mimics the opponent. If it cannot mimic a move,
- *           it will pick a random coordinate.
  */
 enum class Strategy(val id: Int) {
 
     RANDOMIZER(1),
     DEFAULT(2),
-    MATHEMATICIAN(3);
+    HUMAN(3);
 
     companion object {
 

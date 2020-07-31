@@ -6,6 +6,7 @@ import no.esa.battleship.repository.QueryFileReader
 import no.esa.battleship.repository.coordinate.CoordinateDao
 import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.repository.entity.CoordinateEntity
+import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.player.PlayerDao
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
@@ -97,5 +98,20 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
         }
 
         return namedTemplate.update(query, parameters)
+    }
+
+    @Logged
+    @DataAccess
+    override fun findRemainingPlayersByGameId(gameId: Int): List<PlayerEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::findRemainingPlayersByGameId)
+        val parameters = MapSqlParameterSource().apply {
+            addValue(PlayerDao.GAME_ID, gameId)
+        }
+
+        return namedTemplate.query(query, parameters) { rs, _ ->
+            PlayerEntity(rs.getInt(PlayerDao.PRIMARY_KEY),
+                         rs.getInt(PlayerDao.PLAYER_TYPE_ID),
+                         gameId)
+        }
     }
 }

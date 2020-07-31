@@ -16,7 +16,7 @@ import javax.validation.ConstraintViolationException
 
 @ControllerAdvice
 class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: ResourceBundle,
-                       private val logger: Logger) {
+                       private val exceptionHandlerLogger: Logger) {
 
     /**
      * All instances of this exception are thrown from data access objects,
@@ -29,17 +29,28 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
     fun handle(exception: DataAccessException): ResponseEntity<String> {
         val callingClass = exception.callingClass.simpleName?.decapitalize()
         val callingFunction = exception.callingFunction.name
+        val loggedErrorMessage = exception.cause?.message
+                ?: exception.message
+                ?: exception.toString()
 
-        logger.error(exception.cause?.message ?: exception.message ?: exception.toString())
+        val logger = callingClass?.let {
+            LoggerFactory.getLogger(callingClass)
+        } ?: exceptionHandlerLogger
+
+        logger.error(loggedErrorMessage)
+
+        val displayedErrorMessage = resourceBundle.getString("dataAccessException.$callingClass.$callingFunction")
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
-                .body(resourceBundle.getString("dataAccessException.$callingClass.$callingFunction"))
+                .body(displayedErrorMessage)
     }
 
     @ExceptionHandler(GameInitializationException::class)
     fun handle(exception: GameInitializationException): ResponseEntity<String> {
-        logger.warn(exception.message)
+        val logger = LoggerFactory.getLogger("GameInitializationService")
+
+        logger.error(exception.message)
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
@@ -49,16 +60,22 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
     @ExceptionHandler(ConstraintViolationException::class,
                       IllegalArgumentException::class)
     fun handle(exception: ConstraintViolationException): ResponseEntity<String> {
-        logger.warn(exception.message)
+        exceptionHandlerLogger.warn(exception.message)
 
         return ResponseEntity
                 .status(BAD_REQUEST)
                 .body(exception.message)
     }
 
+    /**
+     * Logs an exception using the logger of the class of the called function,
+     * before returning a response entity with a generic exception.
+     */
     @ExceptionHandler(GameStateException::class)
     fun handle(exception: GameStateException): ResponseEntity<String> {
-        LoggerFactory.getLogger(exception.callingClass.qualifiedName).warn(exception.message)
+        val logger = LoggerFactory.getLogger(exception.callingClass.qualifiedName)
+
+        logger.warn(exception.message)
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
@@ -70,7 +87,7 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
      */
     @ExceptionHandler(Exception::class)
     fun handle(exception: Throwable): ResponseEntity<String> {
-        logger.warn(exception.message)
+        exceptionHandlerLogger.warn(exception.message)
 
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)

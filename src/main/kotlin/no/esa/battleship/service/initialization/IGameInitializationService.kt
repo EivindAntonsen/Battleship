@@ -4,5 +4,5 @@ import no.esa.battleship.repository.entity.GameEntity
 import java.util.*
 
 interface IGameInitializationService {
-    fun initializeNewGame(gameSeriesId: UUID?): GameEntity
+    fun initializeNewGame(onlyAI: Boolean): GameEntity
 }

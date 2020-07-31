@@ -14,15 +14,15 @@ import java.util.*
 class GameController(private val gameInitializationService: IGameInitializationService,
                      private val gamePlayService: IGamePlayService) : GameApi {
 
-    override fun initializeNewGame(gameSeriesId: UUID?): ResponseEntity<Int> {
-        val game = gameInitializationService.initializeNewGame(gameSeriesId)
+    override fun initializeNewGame(onlyAI: Boolean): ResponseEntity<Int> {
+        val game = gameInitializationService.initializeNewGame(onlyAI)
 
         return ResponseEntity.ok(game.id)
     }
 
     @CrossOrigin(origins = ["http://localhost:3000"])
-    override fun playGame(gameId: Int?, gameSeriesId: UUID?): ResponseEntity<GameReportDTO> {
-        val gameReport = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(gameSeriesId).id)
+    override fun playAiGame(gameId: Int?): ResponseEntity<GameReportDTO> {
+        val gameReport = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(true).id)
         val gameReportDTO = GameReportMapper.toDTO(gameReport)
 
         return ResponseEntity.ok(gameReportDTO)

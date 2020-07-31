@@ -1,33 +1,58 @@
 components:
   schemas:
+    Coordinate:
+      type: object
+      description: A coordinate that represents a tile in the game.
+      properties:
+        horizontalPosition:
+          description: "The horizontal position of a coordinate."
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 10
+          example: 1
+        verticalPosition:
+          description: "The vertical position of a coordinate."
+          type: string
+          minLength: 1
+          maxLength: 1
+          example: "a"
+          pattern: "[a-j|A-J]"
+      required:
+        - horizontalPosition
+        - verticalPosition
     TurnRequestDTO:
       type: object
-      description: Contains instructions for where to shoot for a given player
+      description: Contains instructions for where to strike for a given player
       properties:
         gameId:
           type: integer
           format: int32
+          description: The id of the game to which this strike applies
         playerId:
           type: integer
           format: int32
-        coordinateId:
-          type: integer
-          format: int32
+          description: The id of the player behind this strike
+        coordinate:
+          $ref: "#/components/schemas/Coordinate"
           description: Which coordinate the current player wishes to strike
       required:
         - gameId
         - playerId
-        - coordinateId
+        - coordinate
     TurnResultDTO:
       type: object
       description: Contains information about the outcome of an executed turn
       properties:
+        coordinate:
+          $ref: "#/components/schemas/Coordinate"
         isHit:
           type: boolean
           description: Whether a ship was hit or not
         didDestroyShip:
           type: boolean
-          description: Whether a ship was destroyed or not
+          description: Whether a ship was fully destroyed or not
       required:
         - isHit
         - didDestroyShip
+        - coordinate
