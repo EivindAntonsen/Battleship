@@ -170,6 +170,19 @@ class TargetingService(private val componentDao: IComponentDao,
         }
     }
 
+    /**
+     * This attempts to score every coordinate on the game board for every ship.
+     *
+     * This is done by counting the number of available configurations a ship can be placed
+     * in across the game board, then returning a map of coordinates and their associated count (score).
+     * The higher count, the more likely it is a ship is placed there.
+     *
+     * @param availableCoordinates are coordinates that have not yet been struck.
+     * @param shipTypes are the still intact ship types.
+     * @param axis is which axis to score for, i.e. vertical or horizontal.
+     *
+     * @return a map over coordinates and a count of how many possible configurations they appeared in per ship.
+     */
     private fun scoreCoordinates(availableCoordinates: List<CoordinateEntity>,
                                  shipTypes: List<ShipType>,
                                  axis: Axis): Map<ShipType, Map<CoordinateEntity, Int>> {
