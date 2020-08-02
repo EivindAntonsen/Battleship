@@ -16,9 +16,8 @@ import javax.sql.DataSource
 
 @SpringBootConfiguration
 @ComponentScan
-@PropertySource("file:C:/Esa/Utvikling/env.properties")
-class ApplicationConfig(private val databaseProperties: DatabaseProperties,
-                        private val environment: Environment) {
+@PropertySource("file:C:/opt/Esa/Utvikling/env.properties")
+class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
 
     @Bean
     fun produceLogger(injectionPoint: InjectionPoint): Logger {
