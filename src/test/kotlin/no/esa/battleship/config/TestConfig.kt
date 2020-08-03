@@ -20,6 +20,7 @@ object TestConfig {
                                   "db/migration/test")
         }
         val flyway = Flyway(config)
+
         flyway.clean()
         flyway.migrate()
     }

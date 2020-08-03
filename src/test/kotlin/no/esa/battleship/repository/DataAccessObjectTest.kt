@@ -6,6 +6,7 @@ import io.mockk.just
 import io.mockk.mockk
 import no.esa.battleship.TestData
 import no.esa.battleship.config.TestConfig
+import no.esa.battleship.enums.PlayerType
 import no.esa.battleship.enums.ShipType
 import no.esa.battleship.enums.Strategy
 import no.esa.battleship.repository.component.ComponentDao
@@ -92,7 +93,7 @@ internal class DataAccessObjectTest {
 
         @Test //invalid game state with 3 players, but whatever
         fun `save should save a new player to an existing game`() {
-            val playerId = playerDao.save(TestData.gameId)
+            val playerId = playerDao.save(TestData.gameId, PlayerType.AI.id)
 
             assert(playerDao.get(playerId).gameId == TestData.gameId)
         }

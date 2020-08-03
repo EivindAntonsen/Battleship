@@ -10,4 +10,5 @@ interface IComponentDao {
     fun update(componentId: Int, isDestroyed: Boolean): Int
     fun getByGameId(gameId: Int): List<ComponentEntity>
     fun findRemainingPlayersByGameId(gameId: Int): List<PlayerEntity>
+    fun getOccupiedCoordinatesByPlayerId(playerId: Int): List<CoordinateEntity>
 }

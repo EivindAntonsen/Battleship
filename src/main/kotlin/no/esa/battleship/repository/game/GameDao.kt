@@ -39,9 +39,6 @@ class GameDao(private val jdbcTemplate: JdbcTemplate) : IGameDao {
         return namedTemplate.queryForObject(query, parameters) { rs: ResultSet, _ ->
             val dateTime = rs.getTimestamp(DATETIME).toLocalDateTime()
             val isConcluded = rs.getBoolean(IS_CONCLUDED)
-            val gameSeriesId = rs.getString(GAME_SERIES_ID)?.let {
-                UUID.fromString(it)
-            }
 
             GameEntity(gameId, dateTime, isConcluded)
         } ?: throw NoSuchGameException(this::class, ::get, "No game found with id $gameId!")

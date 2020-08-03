@@ -160,6 +160,7 @@ class GamePlayService(private val gameDao: IGameDao,
                      gameTurn)
     }
 
+    // todo
     fun executeGameTurn(turnRequest: TurnRequest): TurnResult {
         val targetingEntity = targetingService.getTargeting(turnRequest.playerId)
         val targetedShips = targetingService.findTargetedShips(targetingEntity.id)
@@ -175,6 +176,7 @@ class GamePlayService(private val gameDao: IGameDao,
         val allShipsForTargetPlayer = shipDao.getAllShipsForPlayer(turnRequest.targetPlayerId)
         val struckShip = getStruckShipWithComponents(allShipsForTargetPlayer, turnRequest.coordinateEntity)
 
+        @Suppress("UNUSED_VARIABLE")
         val result = if (struckShip != null) {
             if (targetingEntity.targetingMode != DESTROY) {
                 targetingService.updateTargetingMode(turnRequest.playerId, DESTROY)

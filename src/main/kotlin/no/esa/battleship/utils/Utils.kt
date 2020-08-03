@@ -26,10 +26,26 @@ infix fun CoordinateEntity.isHorizontallyAlignedWith(that: CoordinateEntity): Bo
 }
 
 infix fun CoordinateEntity.isAdjacentWith(that: CoordinateEntity): Boolean {
-    return this isHorizontallyAlignedWith that &&
-            this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 1) ||
-            this isVerticallyAlignedWith that &&
-            this.verticalPosition - that.verticalPosition in listOf(-1, 1)
+    val theyAreHorizontallyAligned = this isHorizontallyAlignedWith that
+    val theyAreVerticallyAligned = this isVerticallyAlignedWith that
+    val distanceHorizontallyApartIsOne = this.horizontalPositionAsInt() - that.horizontalPositionAsInt() in listOf(-1, 1)
+    val distanceVerticallyApartIsOne = this.verticalPosition - that.verticalPosition in listOf(-1, 1)
+
+
+    return theyAreHorizontallyAligned && distanceHorizontallyApartIsOne ||
+            theyAreVerticallyAligned && distanceVerticallyApartIsOne
+}
+
+fun <T, R> Iterable<T>.flatMapIndexedNotNull(transform: (index: Int, T) -> Iterable<R>?): List<R> {
+    return flatMapIndexedTo(ArrayList(), transform)
+}
+
+private inline fun <T, R, C : MutableCollection<in R>> Iterable<T>.flatMapIndexedTo(destination: C,
+                                                                                    transform: (index: Int, T) -> Iterable<R>?): C {
+
+    forEachIndexed { index, element -> transform(index, element)?.let { destination.addAll(it) } }
+
+    return destination
 }
 
 fun <S, T : S> Iterable<T>.validateElements(validationFunction: (acc: S, T) -> Boolean): Boolean {

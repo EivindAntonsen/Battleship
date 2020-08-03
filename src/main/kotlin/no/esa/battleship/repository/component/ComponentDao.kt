@@ -8,6 +8,7 @@ import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.player.PlayerDao
+import no.esa.battleship.repository.ship.ShipDao
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -21,7 +22,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
         const val SCHEMA_NAME = "battleship"
         const val TABLE_NAME = "component"
         const val PRIMARY_KEY = "id"
-        const val PLAYER_SHIP_ID = "ship_id"
+        const val SHIP_ID = "ship_id"
         const val COORDINATE_ID = "coordinate_id"
         const val IS_DESTROYED = "is_destroyed"
     }
@@ -40,7 +41,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
             }
 
             val parameters = MapSqlParameterSource().apply {
-                addValue(PLAYER_SHIP_ID, shipId)
+                addValue(SHIP_ID, shipId)
                 addValue(COORDINATE_ID, coordinate.id)
                 addValue(IS_DESTROYED, false)
             }
@@ -67,7 +68,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
     override fun getByShipId(shipId: Int): List<ComponentEntity> {
         val query = QueryFileReader.readSqlFile(this::class, ::getByShipId)
         val parameters = MapSqlParameterSource().apply {
-            addValue(PLAYER_SHIP_ID, shipId)
+            addValue(SHIP_ID, shipId)
         }
 
         return get(query, parameters)
@@ -82,7 +83,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
             val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
 
             ComponentEntity(rs.getInt(PRIMARY_KEY),
-                            rs.getInt(PLAYER_SHIP_ID),
+                            rs.getInt(SHIP_ID),
                             CoordinateEntity(coordinateId, xCoordinate, yCoordinate),
                             rs.getBoolean(IS_DESTROYED))
         }
@@ -112,6 +113,21 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
             PlayerEntity(rs.getInt(PlayerDao.PRIMARY_KEY),
                          rs.getInt(PlayerDao.PLAYER_TYPE_ID),
                          gameId)
+        }
+    }
+
+    @Logged
+    @DataAccess
+    override fun getOccupiedCoordinatesByPlayerId(playerId: Int): List<CoordinateEntity> {
+        val query = QueryFileReader.readSqlFile(this::class, ::getOccupiedCoordinatesByPlayerId)
+        val parameters = MapSqlParameterSource().apply {
+            addValue(ShipDao.PLAYER_ID, playerId)
+        }
+
+        return namedTemplate.query(query, parameters) { rs, _ ->
+            CoordinateEntity(rs.getInt(CoordinateDao.PRIMARY_KEY),
+                             rs.getString(CoordinateDao.X_COORDINATE)[0],
+                             rs.getInt(CoordinateDao.Y_COORDINATE))
         }
     }
 }

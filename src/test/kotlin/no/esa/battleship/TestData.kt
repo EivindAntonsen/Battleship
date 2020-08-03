@@ -1,5 +1,6 @@
 package no.esa.battleship
 
+import no.esa.battleship.enums.PlayerType
 import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.repository.entity.PlayerEntity
 import java.time.LocalDateTime
@@ -17,15 +18,15 @@ object TestData {
     fun game(id: Int): GameEntity {
         return GameEntity(id,
                           LocalDateTime.of(2020,
-                                                                                         1,
-                                                                                         1,
-                                                                                         0,
-                                                                                         0),
-                          null,
+                                           1,
+                                           1,
+                                           0,
+                                           0),
                           false)
     }
 
-    fun player(id: Int = 1, gameId: Int = 1): PlayerEntity = PlayerEntity(
+    private fun player(id: Int = 1, gameId: Int = 1): PlayerEntity = PlayerEntity(
             id,
+            PlayerType.AI.id,
             gameId)
 }

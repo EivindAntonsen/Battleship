@@ -71,6 +71,7 @@ class ShipPlacementService(private val logger: Logger,
                                             shipType: ShipType): List<List<CoordinateEntity>> {
 
         return availableCoordinateEntities.shuffled().mapNotNull { index ->
+
             val allowedRange = if (axis == VERTICAL) {
                 index.verticalPosition until index.verticalPosition + shipType.size
             } else index.horizontalPositionAsInt() until (index.horizontalPositionAsInt() + shipType.size)
@@ -83,8 +84,8 @@ class ShipPlacementService(private val logger: Logger,
                 }
             }.ifEmpty {
                 throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")
-            }.takeIf {
-                it.size == shipType.size
+            }.takeIf { coordinates ->
+                coordinates.size == shipType.size
             }
         }
     }
@@ -119,11 +120,7 @@ class ShipPlacementService(private val logger: Logger,
      */
     private fun getAvailableCoordinatesForPlayer(playerId: Int): List<CoordinateEntity> {
         val allCoordinates = coordinateDao.getAll()
-        val occupiedCoordinates = shipDao.getAllShipsForPlayer(playerId).flatMap { ship ->
-            componentDao.getByShipId(ship.id).map { component ->
-                component.coordinateEntity
-            }
-        }
+        val occupiedCoordinates = componentDao.getOccupiedCoordinatesByPlayerId(playerId)
 
         return allCoordinates.filter { coordinate ->
             coordinate !in occupiedCoordinates

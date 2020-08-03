@@ -41,7 +41,9 @@ class GameService(private val turnDao: ITurnDao,
                 it.gameTurn == latestGameTurn
             }.size == 2
 
-            if (latestGameTurnIsAlreadyFinished) latestGameTurn + 1 else latestGameTurn
+            if (latestGameTurnIsAlreadyFinished) {
+                latestGameTurn + 1
+            } else latestGameTurn
         } else 1
     }
 
