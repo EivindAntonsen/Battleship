@@ -1,11 +1,9 @@
 package no.esa.battleship.service.targeting
 
-import no.esa.battleship.enums.Axis
+import no.esa.battleship.enums.*
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
-import no.esa.battleship.enums.ShipStatus
-import no.esa.battleship.enums.ShipType
-import no.esa.battleship.enums.TargetingMode
+import no.esa.battleship.enums.CoordinateEvaluationMode.PLACEMENT
 import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.NoAvailableCoordinatesLeftException
 import no.esa.battleship.exceptions.NoValidCoordinatesException
@@ -97,6 +95,29 @@ class TargetingService(private val componentDao: IComponentDao,
                 ?: throw NoValidCoordinatesException(this::class,
                                                      ::destroy,
                                                      "Found no suitable coordinates!")
+    }
+
+    fun scoreCoordinates(coordinates: List<CoordinateEntity>,
+                         evaluationMode: CoordinateEvaluationMode): Map<CoordinateEntity, Int> {
+
+
+        return scoreCoordinatesForShipTypes(coordinates, ShipType.values().toList())
+    }
+
+    private fun scoreCoordinatesForPlacement(coordinates: List<CoordinateEntity>,
+                                             mode: CoordinateEvaluationMode): Map<CoordinateEntity, Int> {
+
+        if (coordinates.isEmpty()) throw NoValidCoordinatesException(this::class,
+                                                                     ::scoreCoordinatesForPlacement,
+                                                                     "No coordinates to evaluate!")
+
+        val scoreMap = scoreCoordinatesForShipTypes(coordinates, ShipType.values().toList())
+
+        if (scoreMap.isEmpty()) throw NoValidCoordinatesException(this::class,
+                                                                  ::scoreCoordinatesForPlacement,
+                                                                  "No coordinates suitable for ship placement (HIGHLY doubt this)")
+
+        return scoreMap
     }
 
     /**

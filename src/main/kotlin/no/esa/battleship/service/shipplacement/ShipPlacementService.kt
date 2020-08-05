@@ -28,28 +28,68 @@ class ShipPlacementService(private val logger: Logger,
     }
 
     override fun placeShipsForPlayer(playerId: Int) {
-        val ships = ShipType.values().map { shipType ->
+        val ships = ShipType.values().mapIndexed { index, shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
 
-            placeShip(playerId, Axis.random(), availableCoordinates, shipType)
+            placeShip(playerId, Axis.random(), availableCoordinates, false, shipType)
         }
 
         logger.info("Placed ${ships.size} ships for player $playerId.")
     }
 
+    /**
+     * Place a ship randomly on the game board.
+     *
+     * todo
+     *  Include scoring of coordinates for 2/5 ships,
+     *  in order to have some ships using theoretical best placement
+     *  and a majority using randomness. These ships should not be placed first either.
+     *  This should add some degree of unpredictability that can't be gamified.
+     *
+     * @param playerId is the id of the player that will have ships placed.
+     * @param axis indicates which axis (i.e. horizontal or vertical) will be used.
+     * @param availableCoordinateEntities is the pool from which coordinates may be placed.
+     * @param scoredPlacement whether the placement is based on a score or random selection.
+     * @param shipType is the type of the ship to be placed.
+     *
+     * @return a ship entity, as modeled in the data layer.
+     */
     private fun placeShip(playerId: Int,
                           axis: Axis,
                           availableCoordinateEntities: List<CoordinateEntity>,
+                          scoredPlacement: Boolean,
                           shipType: ShipType): ShipEntity {
 
         val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities, axis, shipType)
-        val shipComponentCoordinateOptions = getShipComponentCoordinates(filteredCoordinates, axis, shipType)
+        val shipComponentCoordinateOptions = getPotentialCoordinatesForShipType(filteredCoordinates, axis, shipType)
 
-        val selectedComponentCoordinates = shipComponentCoordinateOptions.shuffled().firstOrNull { coordinateEntities ->
-            availableCoordinateEntities.containsAll(coordinateEntities)
+        val selectedComponentCoordinates = if (scoredPlacement) {
+            // todo test this
+            val scoreMap = mutableMapOf<CoordinateEntity, Int>().apply {
+                shipComponentCoordinateOptions.forEach { placementOption ->
+                    placementOption.forEach { merge(it, 1, Integer::sum) }
+                }
+            }
+
+            val placementOptionsWithScore = shipComponentCoordinateOptions.map { placementOption ->
+                val combinedScore = placementOption.mapNotNull { coordinate ->
+                    scoreMap[coordinate]
+                }.sum()
+
+                placementOption to combinedScore
+            }.toMap()
+
+            placementOptionsWithScore.minBy { (_, score) ->
+                score
+            }?.key
+        } else {
+            shipComponentCoordinateOptions.shuffled().firstOrNull { coordinateEntities ->
+                availableCoordinateEntities.containsAll(coordinateEntities)
+            }
         } ?: throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
 
         val ship = shipDao.save(playerId, shipType.id)
+
         componentDao.save(ship.id, selectedComponentCoordinates)
         shipStatusDao.save(ship.id)
 
@@ -61,26 +101,28 @@ class ShipPlacementService(private val logger: Logger,
      * a ship of a given type may ultimately be placed.
      * Validation is done by ensuring the resulting list is of the same size as the ship type.
      *
-     * @param availableCoordinateEntities is the list of coordinates where a ship may be placed.
+     * @param availableCoordinates is the list of coordinates where a ship may be placed.
      * @param axis is the plane of the ship, i.e. vertical or horizontal.
      * @param shipType is which ship type it is, i.e. Battleship, Cruiser etc.
      *                 They have different sizes, and the resulting list needs to match that.
      */
-    private fun getShipComponentCoordinates(availableCoordinateEntities: List<CoordinateEntity>,
-                                            axis: Axis,
-                                            shipType: ShipType): List<List<CoordinateEntity>> {
+    override fun getPotentialCoordinatesForShipType(availableCoordinates: List<CoordinateEntity>,
+                                                    axis: Axis,
+                                                    shipType: ShipType): List<List<CoordinateEntity>> {
 
-        return availableCoordinateEntities.shuffled().mapNotNull { index ->
+        return availableCoordinates.shuffled().mapNotNull { indexCoordinate ->
 
             val allowedRange = if (axis == VERTICAL) {
-                index.verticalPosition until index.verticalPosition + shipType.size
-            } else index.horizontalPositionAsInt() until (index.horizontalPositionAsInt() + shipType.size)
+                indexCoordinate.verticalPosition until indexCoordinate.verticalPosition + shipType.size
+            } else indexCoordinate.horizontalPositionAsInt() until (indexCoordinate.horizontalPositionAsInt() + shipType.size)
 
-            availableCoordinateEntities.filter {
+            availableCoordinates.filter { coordinate ->
                 if (axis == VERTICAL) {
-                    it isVerticallyAlignedWith index && it.verticalPosition in allowedRange
+                    coordinate isVerticallyAlignedWith indexCoordinate
+                            && coordinate.verticalPosition in allowedRange
                 } else {
-                    it isHorizontallyAlignedWith index && it.horizontalPositionAsInt() in allowedRange
+                    coordinate isHorizontallyAlignedWith indexCoordinate
+                            && coordinate.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
                 throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")
@@ -93,7 +135,7 @@ class ShipPlacementService(private val logger: Logger,
     /**
      * When a ship is placed on the board, it is done by first placing down the rear
      * of the ship. So for a ship with 3 components facing NORTH on column A,
-     * it would start with A16, then A15 and finally A14.
+     * it would start with A10, then A9 and finally A8.
      *
      * This function takes a list of available coordinates, groups them by their column,
      * picks a random column, then filters out coordinates that would be too close
