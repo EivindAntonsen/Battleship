@@ -47,7 +47,7 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
             username = databaseProperties.username
             password = databaseProperties.password
             jdbcUrl = databaseProperties.url
-            driverClassName = databaseProperties.driver
+            // driverClassName = databaseProperties.driver
         })
     }
 

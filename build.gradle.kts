@@ -70,19 +70,19 @@ dependencies {
     testImplementation(group = jetBrains, name = "kotlin-test-annotations-common", version = "1.3.71")
     testImplementation(group = jetBrains, name = "kotlin-test", version = "1.3.71")
     testImplementation(group = jetBrains, name = "kotlin-test-common", version = "1.3.71")
+    implementation(group = jetBrains, name = "kotlin-reflect")
+    implementation(group = jetBrains, name = "kotlin-stdlib-jdk8")
     testImplementation(group = "io.mockk", name = "mockk", version = "1.10.0")
     testImplementation(group = "com.willowtreeapps.assertk", name = "assertk", version = "0.22")
     testImplementation(group = "com.h2database", name = "h2", version = "1.4.200")
 
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin")
-    implementation(group = jetBrains, name = "kotlin-reflect")
-    implementation(group = jetBrains, name = "kotlin-stdlib-jdk8")
-    implementation(group = jetBrains + "x", name = "kotlinx-coroutines-core", version = "1.3.7")
+    //implementation(group = jetBrains + "x", name = "kotlinx-coroutines-core", version = "1.3.7")
     implementation(group = "org.flywaydb", name = "flyway-core", version = "6.4.1")
     implementation(group = "org.postgresql", name = "postgresql", version = "42.2.14")
     implementation(group = "io.springfox", name = "springfox-swagger2", version = "2.9.2")
     implementation(group = "io.springfox", name = "springfox-swagger-ui", version = "2.9.2")
-    implementation(group = "org.springframework.retry", name = "spring-retry", version = "1.2.5.RELEASE")
+    //implementation(group = "org.springframework.retry", name = "spring-retry", version = "1.2.5.RELEASE")
 }
 tasks {
     create<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("buildKotlinClient") {
