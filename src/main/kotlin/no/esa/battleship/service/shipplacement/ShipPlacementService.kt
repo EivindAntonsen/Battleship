@@ -28,10 +28,17 @@ class ShipPlacementService(private val logger: Logger,
     }
 
     override fun placeShipsForPlayer(playerId: Int) {
-        val ships = ShipType.values().mapIndexed { index, shipType ->
+        val ships = ShipType.values().toList().shuffled().mapIndexed { index, shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
 
-            placeShip(playerId, Axis.random(), availableCoordinates, false, shipType)
+            // Only want scored placement for the last two ships, not the first three.
+            val placementShouldBeScored = index > 2
+
+            placeShip(playerId,
+                      Axis.random(),
+                      availableCoordinates,
+                      placementShouldBeScored,
+                      shipType)
         }
 
         logger.info("Placed ${ships.size} ships for player $playerId.")

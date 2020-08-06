@@ -1,1 +1,1 @@
-docker build -t database . && docker run --rm -P --name database database && docker ps
+docker build -t database . && docker run --rm -P --name database database
