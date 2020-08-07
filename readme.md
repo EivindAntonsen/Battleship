@@ -4,7 +4,16 @@ Battleship is a two-player strategy type guessing game. This project has built t
 
 ## Installation
 
-Make sure you have Docker installed (https://www.docker.com), then run the script in /docker/database to spin up the database container.
+Make sure you have Docker installed (https://www.docker.com), then run the script in /docker/database to spin up the database container. 
+
+env.properties file:
+````properties
+database.schema=battleship
+database.url=jdbc:postgresql://localhost:54320/postgres
+database.username=postgres
+database.password=docker
+````
+
 
 ### Usage
 

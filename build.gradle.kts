@@ -115,17 +115,4 @@ tasks {
     withType<Test> {
         useJUnitPlatform()
     }
-
-    /**
-     * Starts the database container.
-     *
-     * todo     - Use environment variables for name, port & password.
-     * fixme    - This will crash if the container already exists.
-     *            Should use 'start' if it exists, and 'run' otherwise.
-     *            Current solution is to remove container if it already exists.
-     */
-    exec {
-        workingDir("$projectDir/docker/database")
-        commandLine("docker run --rm -d --name battleship_database -v my_dbdata:/var/lib/postgresql/data -p 54320:5432 -e POSTGRES_PASSWORD=docker postgres:11".split(" "))
-    }
 }

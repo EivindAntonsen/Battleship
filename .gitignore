@@ -9,3 +9,4 @@ build/
 *.ipr
 out/
 /logs/
+/src/main/resources/properties/

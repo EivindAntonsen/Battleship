@@ -16,7 +16,7 @@ import javax.sql.DataSource
 
 @SpringBootConfiguration
 @ComponentScan
-@PropertySource("file:C:/Esa/Utvikling/env.properties")
+@PropertySource("file:src/main/resources/properties/env.properties")
 class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
 
     @Bean
