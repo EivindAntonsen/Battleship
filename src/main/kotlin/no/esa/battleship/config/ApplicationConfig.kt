@@ -16,7 +16,7 @@ import javax.sql.DataSource
 
 @SpringBootConfiguration
 @ComponentScan
-@PropertySource("file:C:/opt/Esa/Utvikling/env.properties")
+@PropertySource("file:C:/Esa/Utvikling/env.properties")
 class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
 
     @Bean
@@ -47,7 +47,6 @@ class ApplicationConfig(private val databaseProperties: DatabaseProperties) {
             username = databaseProperties.username
             password = databaseProperties.password
             jdbcUrl = databaseProperties.url
-            // driverClassName = databaseProperties.driver
         })
     }
 

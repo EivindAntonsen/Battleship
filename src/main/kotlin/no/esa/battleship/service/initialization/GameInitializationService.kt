@@ -57,7 +57,7 @@ class GameInitializationService(private val logger: Logger,
 
         return if (currentPlayers.size in 0..1) {
             val playerId = playerDao.save(gameEntity.id, playerType.id)
-            val strategy = if (playerType == AI) Strategy.random().also {
+            val strategy = if (playerType == AI) Strategy.DEFAULT.also {
                 logger.info("Selected strategy $it for player $playerId.")
             } else Strategy.HUMAN
 

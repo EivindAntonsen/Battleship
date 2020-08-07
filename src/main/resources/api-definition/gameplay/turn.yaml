@@ -1,6 +1,6 @@
 post:
   summary: Executes a game turn
-  operationId: coordinate
+  operationId: executeTurn
   tags:
     - gamePlay
   requestBody:

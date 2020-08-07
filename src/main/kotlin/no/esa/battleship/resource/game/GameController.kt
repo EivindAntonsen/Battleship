@@ -8,7 +8,6 @@ import no.esa.battleship.service.initialization.IGameInitializationService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.RestController
-import java.util.*
 
 @RestController
 class GameController(private val gameInitializationService: IGameInitializationService,
@@ -22,7 +21,7 @@ class GameController(private val gameInitializationService: IGameInitializationS
 
     @CrossOrigin(origins = ["http://localhost:3000"])
     override fun playAiGame(gameId: Int?): ResponseEntity<GameReportDTO> {
-        val gameReport = gamePlayService.playGame(gameId ?: gameInitializationService.initializeNewGame(true).id)
+        val gameReport = gamePlayService.playAiGame(gameId ?: gameInitializationService.initializeNewGame(true).id)
         val gameReportDTO = GameReportMapper.toDTO(gameReport)
 
         return ResponseEntity.ok(gameReportDTO)

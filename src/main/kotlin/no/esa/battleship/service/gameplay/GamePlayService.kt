@@ -28,7 +28,7 @@ class GamePlayService(private val gameDao: IGameDao,
                       private val gameService: IGameService,
                       private val logger: Logger) : IGamePlayService {
 
-    override fun playGame(gameId: Int): GameReport {
+    override fun playAiGame(gameId: Int): GameReport {
         val game = gameDao.get(gameId)
         val (player1, player2) = gameService.getPlayersInGame(gameId)
 
@@ -160,8 +160,14 @@ class GamePlayService(private val gameDao: IGameDao,
                      gameTurn)
     }
 
+    fun continueGame(turnRequest: TurnRequest) {
+        val gameEntity = gameDao.get(turnRequest.gameId)
+
+        TODO()
+    }
+
     // todo
-    fun executeGameTurn(turnRequest: TurnRequest): TurnResult {
+    override fun executeHumanPlayerTurn(turnRequest: TurnRequest): TurnResult {
         val targetingEntity = targetingService.getTargeting(turnRequest.playerId)
         val targetedShips = targetingService.findTargetedShips(targetingEntity.id)
         val previousTurns = turnDao.getPreviousTurnsByGameId(turnRequest.gameId)
