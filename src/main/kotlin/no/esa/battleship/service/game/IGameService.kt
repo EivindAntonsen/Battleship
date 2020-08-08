@@ -2,6 +2,7 @@ package no.esa.battleship.service.game
 
 import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.repository.entity.PlayerEntity
+import no.esa.battleship.repository.entity.ResultEntity
 import no.esa.battleship.repository.entity.TurnEntity
 import no.esa.battleship.service.domain.GameReport
 import no.esa.battleship.service.domain.PerformanceAnalysis
@@ -16,4 +17,5 @@ interface IGameService {
     fun findRemainingPlayers(gameId: Int): List<PlayerEntity>
     fun getPlayersInGame(gameId: Int): Pair<PlayerEntity, PlayerEntity>
     fun playerHasRemainingShips(playerId: Int): Boolean
+    fun concludeGame(gameId: Int): ResultEntity
 }

@@ -5,6 +5,8 @@ import no.esa.battleship.exceptions.InvalidPerformanceException
 import no.esa.battleship.repository.component.IComponentDao
 import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.repository.entity.PlayerEntity
+import no.esa.battleship.repository.entity.ResultEntity
+import no.esa.battleship.repository.game.IGameDao
 import no.esa.battleship.repository.player.IPlayerDao
 import no.esa.battleship.repository.playerstrategy.IPlayerStrategyDao
 import no.esa.battleship.repository.result.IResultDao
@@ -17,11 +19,21 @@ import org.springframework.stereotype.Service
 
 @Service
 class GameService(private val turnDao: ITurnDao,
+                  private val gameDao: IGameDao,
                   private val resultDao: IResultDao,
                   private val playerDao: IPlayerDao,
                   private val playerStrategyDao: IPlayerStrategyDao,
                   private val shipStatusDao: IShipStatusDao,
                   private val componentDao: IComponentDao) : IGameService {
+
+    override fun concludeGame(gameId: Int): ResultEntity {
+        val gameEntity = gameDao.get(gameId)
+        gameDao.conclude(gameId)
+
+        val winningPlayer = determineWinningPlayer(gameEntity)
+
+        return resultDao.save(gameId, winningPlayer?.id)
+    }
 
     /**
      * Calculates the next game turn based on previous ones.

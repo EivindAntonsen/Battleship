@@ -1,26 +1,5 @@
 components:
   schemas:
-    Coordinate:
-      type: object
-      description: A coordinate that represents a tile in the game.
-      properties:
-        horizontalPosition:
-          description: "The horizontal position of a coordinate."
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 10
-          example: 1
-        verticalPosition:
-          description: "The vertical position of a coordinate."
-          type: string
-          minLength: 1
-          maxLength: 1
-          example: "a"
-          pattern: "[a-j|A-J]"
-      required:
-        - horizontalPosition
-        - verticalPosition
     TurnRequestDTO:
       type: object
       description: Contains instructions for where to strike for a given player
@@ -33,19 +12,26 @@ components:
           type: integer
           format: int32
           description: The id of the player behind this strike
-        coordinate:
-          $ref: "#/components/schemas/Coordinate"
+        targetPlayerId:
+          type: integer
+          format: int32
+          description: The id of the targeted player
+        coordinateId:
+          type: integer
+          format: int32
           description: Which coordinate the current player wishes to strike
       required:
         - gameId
         - playerId
         - coordinate
+        - targetPlayerId
     TurnResultDTO:
       type: object
       description: Contains information about the outcome of an executed turn
       properties:
-        coordinate:
-          $ref: "#/components/schemas/Coordinate"
+        coordinateId:
+          type: integer
+          format: int32
         isHit:
           type: boolean
           description: Whether a ship was hit or not
@@ -55,4 +41,4 @@ components:
       required:
         - isHit
         - didDestroyShip
-        - coordinate
+        - coordinateId

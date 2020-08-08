@@ -9,8 +9,16 @@ import org.springframework.http.ResponseEntity
 class GameplayController(private val gamePlayService: IGamePlayService) : GamePlayApi {
 
     override fun executeTurn(turnRequestDTO: TurnRequestDTO): ResponseEntity<TurnResultDTO> {
-        // gamePlayService.executeHumanPlayerTurn(turnRequestDTO)
 
-        TODO()
+        val turnResult = gamePlayService.continueGame(turnRequestDTO)
+        val turnResultDTO = TurnResultDTO(turnResult.coordinateEntity.id,
+                                          turnResult.isHit,
+                                          turnResult.didDestroyShip)
+
+        return ResponseEntity.ok(turnResultDTO)
     }
+
+    /*override fun executeAiTurn(gameId: Int): ResponseEntity<TurnResultDTO> {
+        gamePlayService
+    }*/
 }
