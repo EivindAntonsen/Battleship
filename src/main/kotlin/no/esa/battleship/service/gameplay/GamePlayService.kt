@@ -189,7 +189,7 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
 
             setTargetingModeToDestroy(targetingEntity)
             addShipToTargetedShips(targetingEntity, struckComponent.shipId, targetedShipIds)
-            componentDao.update(struckComponent.id, true)
+            updateStruckComponentToDestroyedStatus(struckShipWithComponents, targetCoordinate)
             removeShipFromTargetedShipsIfItIsDestroyed(targetingEntity, struckShipWithComponents, targetCoordinate)
             setTargetingModeToSeekIfNoTargetedShipRemains(targetingEntity)
         }
