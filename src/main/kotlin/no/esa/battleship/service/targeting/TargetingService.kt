@@ -3,7 +3,6 @@ package no.esa.battleship.service.targeting
 import no.esa.battleship.enums.*
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
-import no.esa.battleship.enums.CoordinateEvaluationMode.PLACEMENT
 import no.esa.battleship.enums.TargetingMode.SEEK
 import no.esa.battleship.exceptions.NoAvailableCoordinatesLeftException
 import no.esa.battleship.exceptions.NoValidCoordinatesException
@@ -51,9 +50,9 @@ class TargetingService(private val componentDao: IComponentDao,
         val availableCoordinates = getAvailableCoordinates(previousCoordinates)
         val intactShipTypes = getIntactShipTypes(targeting)
         val scoreMap = scoreCoordinatesForShipTypes(availableCoordinates, intactShipTypes)
-        val scoringWasSuccessful = scoreMap.isEmpty() && availableCoordinates.isNotEmpty()
+        val scoringWasUnsuccessful = scoreMap.isEmpty() && availableCoordinates.isNotEmpty()
 
-        return if (scoringWasSuccessful) {
+        return if (scoringWasUnsuccessful) {
             selectRandomCoordinateForPlayer(playerId, availableCoordinates)
         } else getHighestRankingCoordinate(scoreMap, previousCoordinates)
                 ?: throw NoAvailableCoordinatesLeftException(this::class, ::seek, when {
