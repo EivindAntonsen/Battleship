@@ -27,11 +27,16 @@ class ShipPlacementService(private val logger: Logger,
         private const val MAX_BOARD_LENGTH = 10
     }
 
+    /**
+     * Places ships for a player.
+     *
+     * The first three are placed randomly, then the next two are placed
+     * based on which coordinates score best.
+     */
     override fun placeShipsForPlayer(playerId: Int) {
         val ships = ShipType.values().toList().shuffled().mapIndexed { index, shipType ->
             val availableCoordinates = getAvailableCoordinatesForPlayer(playerId)
 
-            // Only want scored placement for the last two ships, not the first three.
             val placementShouldBeScored = index > 2
 
             placeShip(playerId,
@@ -45,13 +50,47 @@ class ShipPlacementService(private val logger: Logger,
     }
 
     /**
-     * Place a ship randomly on the game board.
+     * Scores a two-dimensional list of coordinates.
      *
-     * todo
-     *  Include scoring of coordinates for 2/5 ships,
-     *  in order to have some ships using theoretical best placement
-     *  and a majority using randomness. These ships should not be placed first either.
-     *  This should add some degree of unpredictability that can't be gamified.
+     * Each innermost list is a potential ship configuration, indicating where
+     * each individual component of a ship can be placed. This function attempts
+     * to score each such list by associating the coordinates of a ship configuration with a score.
+     * The higher the score is, the more different ship configurations any given
+     * coordinate can hold.
+     *
+     * @param shipConfigurations is a list of different ship configurations.
+     */
+    private fun selectShipConfigurationByScore(shipConfigurations: List<List<CoordinateEntity>>): List<CoordinateEntity>? {
+        val scoreMap = mutableMapOf<CoordinateEntity, Int>().apply {
+            shipConfigurations.forEach { shipConfiguration ->
+                shipConfiguration.forEach { coordinateEntity ->
+                    merge(coordinateEntity, 1, Integer::sum)
+                }
+            }
+        }
+
+        val shipConfigurationsWithScore = shipConfigurations.map { shipConfiguration ->
+            val combinedScore = shipConfiguration.mapNotNull { coordinate ->
+                scoreMap[coordinate]
+            }.sum()
+
+            shipConfiguration to combinedScore
+        }.toMap()
+
+        return shipConfigurationsWithScore.minBy { (_, score) ->
+            score
+        }?.key
+    }
+
+    private fun selectShipConfigurationByRandomSelection(shipConfigurations: List<List<CoordinateEntity>>,
+                                                         availableCoordinateEntities: List<CoordinateEntity>): List<CoordinateEntity>? {
+        return shipConfigurations.shuffled().firstOrNull { coordinateEntities ->
+            availableCoordinateEntities.containsAll(coordinateEntities)
+        }
+    }
+
+    /**
+     * Place a ship on the game board.
      *
      * @param playerId is the id of the player that will have ships placed.
      * @param axis indicates which axis (i.e. horizontal or vertical) will be used.
@@ -67,69 +106,61 @@ class ShipPlacementService(private val logger: Logger,
                           scoredPlacement: Boolean,
                           shipType: ShipType): ShipEntity {
 
-        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities, axis, shipType)
-        val shipComponentCoordinateOptions = getPotentialCoordinatesForShipType(filteredCoordinates, axis, shipType)
+        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities,
+                                                                         axis,
+                                                                         shipType)
 
-        val selectedComponentCoordinates = if (scoredPlacement) {
-            // todo test this
-            val scoreMap = mutableMapOf<CoordinateEntity, Int>().apply {
-                shipComponentCoordinateOptions.forEach { placementOption ->
-                    placementOption.forEach { merge(it, 1, Integer::sum) }
-                }
-            }
+        val shipConfigurations = getShipConfigurationsForShipType(filteredCoordinates,
+                                                                  axis,
+                                                                  shipType)
 
-            val placementOptionsWithScore = shipComponentCoordinateOptions.map { placementOption ->
-                val combinedScore = placementOption.mapNotNull { coordinate ->
-                    scoreMap[coordinate]
-                }.sum()
+        val shipConfiguration = if (scoredPlacement) {
+            selectShipConfigurationByScore(shipConfigurations)
+        } else selectShipConfigurationByRandomSelection(shipConfigurations,
+                                                        availableCoordinateEntities)
 
-                placementOption to combinedScore
-            }.toMap()
-
-            placementOptionsWithScore.minBy { (_, score) ->
-                score
-            }?.key
-        } else {
-            shipComponentCoordinateOptions.shuffled().firstOrNull { coordinateEntities ->
-                availableCoordinateEntities.containsAll(coordinateEntities)
-            }
-        } ?: throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
+        if (shipConfiguration.isNullOrEmpty()) {
+            throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
+        }
 
         val ship = shipDao.save(playerId, shipType.id)
 
-        componentDao.save(ship.id, selectedComponentCoordinates)
+        componentDao.save(ship.id, shipConfiguration)
         shipStatusDao.save(ship.id)
 
         return ship
     }
 
     /**
-     * Based on available coordinates, this returns a list of coordinates where
+     * Based on available coordinates, this returns a list of coordinates (ship configuration) where
      * a ship of a given type may ultimately be placed.
      * Validation is done by ensuring the resulting list is of the same size as the ship type.
      *
-     * @param availableCoordinates is the list of coordinates where a ship may be placed.
+     * @param availableCoordinateEntities is the list of coordinates where a ship may be placed.
      * @param axis is the plane of the ship, i.e. vertical or horizontal.
      * @param shipType is which ship type it is, i.e. Battleship, Cruiser etc.
      *                 They have different sizes, and the resulting list needs to match that.
      */
-    override fun getPotentialCoordinatesForShipType(availableCoordinates: List<CoordinateEntity>,
-                                                    axis: Axis,
-                                                    shipType: ShipType): List<List<CoordinateEntity>> {
+    override fun getShipConfigurationsForShipType(availableCoordinateEntities: List<CoordinateEntity>,
+                                                  axis: Axis,
+                                                  shipType: ShipType): List<List<CoordinateEntity>> {
 
-        return availableCoordinates.shuffled().mapNotNull { indexCoordinate ->
+        return availableCoordinateEntities.shuffled().mapNotNull { indexCoordinate ->
+            val startCoordinateIndex = if (axis == VERTICAL) {
+                indexCoordinate.verticalPosition
+            } else {
+                indexCoordinate.horizontalPositionAsInt()
+            }
 
-            val allowedRange = if (axis == VERTICAL) {
-                indexCoordinate.verticalPosition until indexCoordinate.verticalPosition + shipType.size
-            } else indexCoordinate.horizontalPositionAsInt() until (indexCoordinate.horizontalPositionAsInt() + shipType.size)
+            val finalCoordinateIndex = startCoordinateIndex + shipType.size
 
-            availableCoordinates.filter { coordinate ->
+            val allowedRange = startCoordinateIndex until finalCoordinateIndex
+
+            availableCoordinateEntities.filter { coordinate ->
                 if (axis == VERTICAL) {
-                    coordinate isVerticallyAlignedWith indexCoordinate
-                            && coordinate.verticalPosition in allowedRange
+                    coordinate isVerticallyAlignedWith indexCoordinate && coordinate.verticalPosition in allowedRange
                 } else {
-                    coordinate isHorizontallyAlignedWith indexCoordinate
-                            && coordinate.horizontalPositionAsInt() in allowedRange
+                    coordinate isHorizontallyAlignedWith indexCoordinate && coordinate.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
                 throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")

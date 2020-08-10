@@ -26,3 +26,21 @@ I use this project to show my code style and how I solve certain problems (datab
 ### Coming features
 
 Human vs AI games, simple frontend are the two planned features next up.
+
+#### Concepts used in this project
+
+* Aspect oriented programming
+    * Logging
+        * Repetitive call/response log statements happen in `/battleship/aspect/LogAspect.kt`.
+        * Debug by default, as these calls should be uninteresting in most cases.
+    * Error handling
+        * Calls to data access objects are similar by default, and handle errors the same way. This has been removed from the
+          actual dao-implementations in favor of more readable code.
+* Controller advice
+    * Exception handling
+        * Exceptions should not bubble all the way up to the frontend. There is an exception handler
+          in `/battleship/resource/exceptions/ExceptionHandler.kt` that maps exceptions to more appropriate user-friendly error messages in the resource package.
+* OpenAPI specification
+    * The game API is automatically generated from code that follows the OpenAPI specification.
+      This is found in `src/main/resources/api-definition`. 
+    * This means the Battleship API will be language agnostic and can be integrated with anything following the same standard.

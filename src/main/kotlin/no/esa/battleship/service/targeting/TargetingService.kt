@@ -99,7 +99,6 @@ class TargetingService(private val componentDao: IComponentDao,
     fun scoreCoordinates(coordinates: List<CoordinateEntity>,
                          evaluationMode: CoordinateEvaluationMode): Map<CoordinateEntity, Int> {
 
-
         return scoreCoordinatesForShipTypes(coordinates, ShipType.values().toList())
     }
 
