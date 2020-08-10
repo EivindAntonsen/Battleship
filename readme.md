@@ -34,8 +34,9 @@ Human vs AI games, simple frontend are the two planned features next up.
         * Repetitive call/response log statements happen in `/battleship/aspect/LogAspect.kt`.
         * Debug by default, as these calls should be uninteresting in most cases.
     * Error handling
-        * Calls to data access objects are similar by default, and handle errors the same way. This has been removed from the
-          actual dao-implementations in favor of more readable code.
+        * Repetitive try/catch statements with subsequent logging happen in `/battleship/aspect/DataAccessAspect.kt`.
+        * Calls to data access objects are similar by default, and handle errors the same way. This has been moved from the
+          actual dao-implementations to an aspect in favor of more readable code in the dao.
 * Controller advice
     * Exception handling
         * Exceptions should not bubble all the way up to the frontend. There is an exception handler
