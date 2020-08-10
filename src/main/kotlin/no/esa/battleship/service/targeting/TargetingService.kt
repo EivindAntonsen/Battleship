@@ -96,28 +96,6 @@ class TargetingService(private val componentDao: IComponentDao,
                                                      "Found no suitable coordinates!")
     }
 
-    fun scoreCoordinates(coordinates: List<CoordinateEntity>,
-                         evaluationMode: CoordinateEvaluationMode): Map<CoordinateEntity, Int> {
-
-        return scoreCoordinatesForShipTypes(coordinates, ShipType.values().toList())
-    }
-
-    private fun scoreCoordinatesForPlacement(coordinates: List<CoordinateEntity>,
-                                             mode: CoordinateEvaluationMode): Map<CoordinateEntity, Int> {
-
-        if (coordinates.isEmpty()) throw NoValidCoordinatesException(this::class,
-                                                                     ::scoreCoordinatesForPlacement,
-                                                                     "No coordinates to evaluate!")
-
-        val scoreMap = scoreCoordinatesForShipTypes(coordinates, ShipType.values().toList())
-
-        if (scoreMap.isEmpty()) throw NoValidCoordinatesException(this::class,
-                                                                  ::scoreCoordinatesForPlacement,
-                                                                  "No coordinates suitable for ship placement (HIGHLY doubt this)")
-
-        return scoreMap
-    }
-
     /**
      * This attempts to score every coordinate on the game board for every ship.
      *
