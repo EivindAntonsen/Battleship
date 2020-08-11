@@ -6,7 +6,7 @@ import no.esa.battleship.repository.entity.PlayerEntity
 
 interface IComponentDao {
     fun getByShipId(shipId: Int): List<ComponentEntity>
-    fun save(shipId: Int, coordinateEntities: List<CoordinateEntity>): List<ComponentEntity>
+    fun save(shipId: Int, coordinates: List<CoordinateEntity>): List<ComponentEntity>
     fun update(componentId: Int, isDestroyed: Boolean): Int
     fun getByGameId(gameId: Int): List<ComponentEntity>
     fun findRemainingPlayersByGameId(gameId: Int): List<PlayerEntity>

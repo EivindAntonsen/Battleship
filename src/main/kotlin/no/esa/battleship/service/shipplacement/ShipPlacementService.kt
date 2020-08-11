@@ -16,6 +16,8 @@ import no.esa.battleship.utils.isVerticallyAlignedWith
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
+typealias ShipConfigurations = List<List<CoordinateEntity>>
+
 @Service
 class ShipPlacementService(private val logger: Logger,
                            private val shipDao: IShipDao,
@@ -60,11 +62,11 @@ class ShipPlacementService(private val logger: Logger,
      *
      * @param shipConfigurations is a list of different ship configurations.
      */
-    private fun selectShipConfigurationByScore(shipConfigurations: List<List<CoordinateEntity>>): List<CoordinateEntity>? {
+    private fun selectShipConfigurationByScore(shipConfigurations: ShipConfigurations): List<CoordinateEntity>? {
         val scoreMap = mutableMapOf<CoordinateEntity, Int>().apply {
             shipConfigurations.forEach { shipConfiguration ->
-                shipConfiguration.forEach { coordinateEntity ->
-                    merge(coordinateEntity, 1, Integer::sum)
+                shipConfiguration.forEach { coordinate ->
+                    merge(coordinate, 1, Integer::sum)
                 }
             }
         }
@@ -82,10 +84,10 @@ class ShipPlacementService(private val logger: Logger,
         }?.key
     }
 
-    private fun selectShipConfigurationByRandomSelection(shipConfigurations: List<List<CoordinateEntity>>,
-                                                         availableCoordinateEntities: List<CoordinateEntity>): List<CoordinateEntity>? {
-        return shipConfigurations.shuffled().firstOrNull { coordinateEntities ->
-            availableCoordinateEntities.containsAll(coordinateEntities)
+    private fun selectShipConfigurationByRandomSelection(shipConfigurations: ShipConfigurations,
+                                                         availableCoordinates: List<CoordinateEntity>): List<CoordinateEntity>? {
+        return shipConfigurations.shuffled().firstOrNull { coordinates ->
+            availableCoordinates.containsAll(coordinates)
         }
     }
 
@@ -94,7 +96,7 @@ class ShipPlacementService(private val logger: Logger,
      *
      * @param playerId is the id of the player that will have ships placed.
      * @param axis indicates which axis (i.e. horizontal or vertical) will be used.
-     * @param availableCoordinateEntities is the pool from which coordinates may be placed.
+     * @param availableCoordinates is the pool from which coordinates may be placed.
      * @param scoredPlacement whether the placement is based on a score or random selection.
      * @param shipType is the type of the ship to be placed.
      *
@@ -102,11 +104,11 @@ class ShipPlacementService(private val logger: Logger,
      */
     private fun placeShip(playerId: Int,
                           axis: Axis,
-                          availableCoordinateEntities: List<CoordinateEntity>,
+                          availableCoordinates: List<CoordinateEntity>,
                           scoredPlacement: Boolean,
                           shipType: ShipType): ShipEntity {
 
-        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinateEntities,
+        val filteredCoordinates = getCoordinatesEligibleForIndexPosition(availableCoordinates,
                                                                          axis,
                                                                          shipType)
 
@@ -117,7 +119,7 @@ class ShipPlacementService(private val logger: Logger,
         val shipConfiguration = if (scoredPlacement) {
             selectShipConfigurationByScore(shipConfigurations)
         } else selectShipConfigurationByRandomSelection(shipConfigurations,
-                                                        availableCoordinateEntities)
+                                                        availableCoordinates)
 
         if (shipConfiguration.isNullOrEmpty()) {
             throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
@@ -136,16 +138,16 @@ class ShipPlacementService(private val logger: Logger,
      * a ship of a given type may ultimately be placed.
      * Validation is done by ensuring the resulting list is of the same size as the ship type.
      *
-     * @param availableCoordinateEntities is the list of coordinates where a ship may be placed.
+     * @param availableCoordinates is the list of coordinates where a ship may be placed.
      * @param axis is the plane of the ship, i.e. vertical or horizontal.
      * @param shipType is which ship type it is, i.e. Battleship, Cruiser etc.
      *                 They have different sizes, and the resulting list needs to match that.
      */
-    override fun getShipConfigurationsForShipType(availableCoordinateEntities: List<CoordinateEntity>,
+    override fun getShipConfigurationsForShipType(availableCoordinates: List<CoordinateEntity>,
                                                   axis: Axis,
-                                                  shipType: ShipType): List<List<CoordinateEntity>> {
+                                                  shipType: ShipType): ShipConfigurations {
 
-        return availableCoordinateEntities.shuffled().mapNotNull { indexCoordinate ->
+        return availableCoordinates.shuffled().mapNotNull { indexCoordinate ->
             val startCoordinateIndex = if (axis == VERTICAL) {
                 indexCoordinate.verticalPosition
             } else {
@@ -156,7 +158,7 @@ class ShipPlacementService(private val logger: Logger,
 
             val allowedRange = startCoordinateIndex until finalCoordinateIndex
 
-            availableCoordinateEntities.filter { coordinate ->
+            availableCoordinates.filter { coordinate ->
                 if (axis == VERTICAL) {
                     coordinate isVerticallyAlignedWith indexCoordinate && coordinate.verticalPosition in allowedRange
                 } else {
@@ -179,7 +181,7 @@ class ShipPlacementService(private val logger: Logger,
      * picks a random column, then filters out coordinates that would be too close
      * to the edge for the current ship.
      */
-    private fun getCoordinatesEligibleForIndexPosition(availableCoordinateEntities: List<CoordinateEntity>,
+    private fun getCoordinatesEligibleForIndexPosition(availableCoordinates: List<CoordinateEntity>,
                                                        axis: Axis,
                                                        shipType: ShipType): List<CoordinateEntity> {
 
@@ -187,7 +189,7 @@ class ShipPlacementService(private val logger: Logger,
             MAX_BOARD_LENGTH until shipType.size
         } else 1..shipType.size
 
-        return availableCoordinateEntities.filter { coordinate ->
+        return availableCoordinates.filter { coordinate ->
             when (axis) {
                 VERTICAL -> coordinate.verticalPosition !in blacklist
                 HORIZONTAL -> coordinate.horizontalPositionAsInt() !in blacklist

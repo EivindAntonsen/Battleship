@@ -27,10 +27,10 @@ class GameService(private val turnDao: ITurnDao,
                   private val componentDao: IComponentDao) : IGameService {
 
     override fun concludeGame(gameId: Int): ResultEntity {
-        val gameEntity = gameDao.get(gameId)
+        val game = gameDao.get(gameId)
         gameDao.conclude(gameId)
 
-        val winningPlayer = determineWinningPlayer(gameEntity)
+        val winningPlayer = determineWinningPlayer(game)
 
         return resultDao.save(gameId, winningPlayer?.id)
     }
@@ -62,11 +62,11 @@ class GameService(private val turnDao: ITurnDao,
     override fun getGameReport(game: GameEntity): GameReport {
         val (player1, player2) = getPlayersInGame(game.id)
         val winningPlayer = determineWinningPlayer(game)
-        val resultEntity = resultDao.save(game.id, winningPlayer?.id)
+        val result = resultDao.save(game.id, winningPlayer?.id)
         val playerInfoList = listOf(getPlayerInfo(player1),
                                     getPlayerInfo(player2))
 
-        return GameReport(game, playerInfoList, resultEntity)
+        return GameReport(game, playerInfoList, result)
     }
 
     override fun determineWinningPlayer(game: GameEntity): PlayerEntity? {
@@ -86,17 +86,17 @@ class GameService(private val turnDao: ITurnDao,
         return PlayerInfo(player, strategy, performanceAnalysis)
     }
 
-    override fun getPerformanceAnalysis(playerEntity: PlayerEntity): PerformanceAnalysis {
-        val previousTurns = turnDao.getPreviousTurnsByPlayerId(playerEntity.id)
+    override fun getPerformanceAnalysis(player: PlayerEntity): PerformanceAnalysis {
+        val previousTurns = turnDao.getPreviousTurnsByPlayerId(player.id)
         val hitCount = previousTurns.filter { it.isHit }.count()
         val missCount = previousTurns.filterNot { it.isHit }.count()
         val totalCount = hitCount + missCount
 
-        if (totalCount == 0) throw InvalidPerformanceException(playerEntity.id)
+        if (totalCount == 0) throw InvalidPerformanceException(player.id)
 
         val hitRate = hitCount.toDouble() / totalCount.toDouble()
 
-        return PerformanceAnalysis(playerEntity, totalCount, hitCount, missCount, hitRate)
+        return PerformanceAnalysis(player, totalCount, hitCount, missCount, hitRate)
     }
 
     override fun findRemainingPlayers(gameId: Int): List<PlayerEntity> {

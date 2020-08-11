@@ -4,7 +4,7 @@ import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.ComponentsException.Alignment
+import no.esa.battleship.exceptions.ComponentAlignmentException
 import no.esa.battleship.repository.entity.ComponentEntity
 import no.esa.battleship.utils.isAdjacentWith
 import no.esa.battleship.utils.validateElements
@@ -42,7 +42,7 @@ data class Components(private val shipType: ShipType,
         return when {
             verticalSpan == 1 && horizontalSpan > 1 -> HORIZONTAL
             verticalSpan > 1 && horizontalSpan == 1 -> VERTICAL
-            else -> throw Alignment(horizontalSpan, verticalSpan)
+            else -> throw ComponentAlignmentException(horizontalSpan, verticalSpan)
         }
     }
 

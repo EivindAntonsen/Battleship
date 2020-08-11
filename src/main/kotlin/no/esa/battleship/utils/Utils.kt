@@ -17,6 +17,9 @@ fun String.abbreviate(): String {
     } else this
 }
 
+fun String.firstCharOrNull(): Char? = if (this.isEmpty()) null else this[0]
+fun String.firstChar(): Char = this[0]
+
 infix fun CoordinateEntity.isVerticallyAlignedWith(that: CoordinateEntity): Boolean {
     return this.horizontalPosition == that.horizontalPosition
 }

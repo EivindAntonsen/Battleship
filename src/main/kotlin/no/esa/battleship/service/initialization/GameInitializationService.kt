@@ -31,13 +31,13 @@ class GameInitializationService(private val logger: Logger,
      *               and populates the board with ships for the AI player.
      */
     override fun initializeNewGame(onlyAI: Boolean): GameEntity {
-        val gameEntity = newGame()
-        val aiPlayer = newPlayer(gameEntity, AI)
+        val game = newGame()
+        val aiPlayer = newPlayer(game, AI)
 
         shipPlacementService.placeShipsForPlayer(aiPlayer.id)
-        if (onlyAI) shipPlacementService.placeShipsForPlayer(newPlayer(gameEntity, AI).id) else newPlayer(gameEntity, HUMAN)
+        if (onlyAI) shipPlacementService.placeShipsForPlayer(newPlayer(game, AI).id) else newPlayer(game, HUMAN)
 
-        return gameEntity
+        return game
     }
 
     private fun newGame(): GameEntity {
@@ -52,18 +52,18 @@ class GameInitializationService(private val logger: Logger,
      *
      * If the player type is AI, the matching
      */
-    private fun newPlayer(gameEntity: GameEntity, playerType: PlayerType = AI): PlayerEntity {
-        val currentPlayers = playerDao.getPlayersInGame(gameEntity.id)
+    private fun newPlayer(game: GameEntity, playerType: PlayerType = AI): PlayerEntity {
+        val currentPlayers = playerDao.getPlayersInGame(game.id)
 
         return if (currentPlayers.size in 0..1) {
-            val playerId = playerDao.save(gameEntity.id, playerType.id)
+            val playerId = playerDao.save(game.id, playerType.id)
             val strategy = if (playerType == AI) Strategy.DEFAULT.also {
                 logger.info("Selected strategy $it for player $playerId.")
             } else Strategy.HUMAN
 
             playerStrategyDao.save(playerId, strategy)
 
-            PlayerEntity(playerId, playerType.id, gameEntity.id)
-        } else throw TooManyPlayers(gameEntity.id)
+            PlayerEntity(playerId, playerType.id, game.id)
+        } else throw TooManyPlayers(game.id)
     }
 }

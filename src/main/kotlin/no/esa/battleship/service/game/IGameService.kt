@@ -13,7 +13,7 @@ interface IGameService {
     fun getGameReport(game: GameEntity): GameReport
     fun determineWinningPlayer(game: GameEntity): PlayerEntity?
     fun getPlayerInfo(player: PlayerEntity): PlayerInfo
-    fun getPerformanceAnalysis(playerEntity: PlayerEntity): PerformanceAnalysis
+    fun getPerformanceAnalysis(player: PlayerEntity): PerformanceAnalysis
     fun findRemainingPlayers(gameId: Int): List<PlayerEntity>
     fun getPlayersInGame(gameId: Int): Pair<PlayerEntity, PlayerEntity>
     fun playerHasRemainingShips(playerId: Int): Boolean

@@ -81,8 +81,8 @@ class TargetingService(private val componentDao: IComponentDao,
     private fun destroy(targeting: TargetingEntity): CoordinateEntity {
         val previousTurns = getPreviousTurnsForPlayer(targeting.playerId)
         val previouslyAttemptedCoordinates = getPreviouslyAttemptedCoordinates(previousTurns)
-        val availableCoordinates = coordinateDao.getAll().filter { coordinateEntity ->
-            coordinateEntity !in previouslyAttemptedCoordinates
+        val availableCoordinates = coordinateDao.getAll().filter { coordinate ->
+            coordinate !in previouslyAttemptedCoordinates
         }
 
         val struckCoordinatesOnCurrentlyTargetedShips = findStruckCoordinatesOnCurrentlyTargetedShips(targeting,
@@ -120,16 +120,16 @@ class TargetingService(private val componentDao: IComponentDao,
         }
 
         return shipTypes.map { shipType ->
-            shipType to availableCoordinates.groupBy { coordinateEntity ->
+            shipType to availableCoordinates.groupBy { coordinate ->
                 when (axis) {
-                    VERTICAL -> coordinateEntity.verticalPosition
-                    HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
+                    VERTICAL -> coordinate.verticalPosition
+                    HORIZONTAL -> coordinate.horizontalPositionAsInt()
                 }
             }.flatMap { (_, coordinates) ->
-                coordinates.sortedBy { coordinateEntity ->
+                coordinates.sortedBy { coordinate ->
                     when (axis) {
-                        VERTICAL -> coordinateEntity.verticalPosition
-                        HORIZONTAL -> coordinateEntity.horizontalPositionAsInt()
+                        VERTICAL -> coordinate.verticalPosition
+                        HORIZONTAL -> coordinate.horizontalPositionAsInt()
                     }
                 }.flatMapIndexedNotNull { index, _ ->
                     val coordinatesFromIndexCanFitShip = index + shipType.size < coordinates.size
@@ -144,8 +144,8 @@ class TargetingService(private val componentDao: IComponentDao,
                 }
             }
         }.map { (_, coordinates) ->
-            coordinates.groupingBy { coordinateEntity ->
-                coordinateEntity
+            coordinates.groupingBy { coordinate ->
+                coordinate
             }.eachCount()
         }
     }
@@ -209,21 +209,21 @@ class TargetingService(private val componentDao: IComponentDao,
     }
 
     private fun findCurrentlyTargetedShipsWithComponents(targeting: TargetingEntity): List<ShipWithComponents> {
-        return targetedShipDao.getByTargetingId(targeting.id).map { targetedShipEntity ->
-            val shipEntity = shipDao.get(targetedShipEntity.shipId)
-            val componentEntities = componentDao.getByShipId(shipEntity.id)
-            val shipType = ShipType.fromInt(shipEntity.shipTypeId)
+        return targetedShipDao.getByTargetingId(targeting.id).map { targetedShip ->
+            val ship = shipDao.get(targetedShip.shipId)
+            val componentEntities = componentDao.getByShipId(ship.id)
+            val shipType = ShipType.fromInt(ship.shipTypeId)
             val components = Components(shipType, componentEntities)
 
-            ShipWithComponents(shipEntity, components)
+            ShipWithComponents(ship, components)
         }
     }
 
     private fun getIntactShipTypes(targeting: TargetingEntity): List<ShipType> {
         return shipStatusDao.getAll(targeting.targetPlayerId).filterValues { shipStatus ->
             shipStatus == ShipStatus.INTACT
-        }.map { (shipEntity, _) ->
-            ShipType.fromInt(shipEntity.shipTypeId)
+        }.map { (ship, _) ->
+            ShipType.fromInt(ship.shipTypeId)
         }
     }
 

@@ -9,6 +9,7 @@ import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.player.PlayerDao
 import no.esa.battleship.repository.ship.ShipDao
+import no.esa.battleship.utils.firstChar
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -32,8 +33,8 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
     @Synchronized
     @Logged
     @DataAccess
-    override fun save(shipId: Int, coordinateEntities: List<CoordinateEntity>): List<ComponentEntity> {
-        return coordinateEntities.map { coordinate ->
+    override fun save(shipId: Int, coordinates: List<CoordinateEntity>): List<ComponentEntity> {
+        return coordinates.map { coordinate ->
             val simpleJdbcInsert = SimpleJdbcInsert(jdbcTemplate).apply {
                 schemaName = SCHEMA_NAME
                 tableName = TABLE_NAME
@@ -79,7 +80,7 @@ class ComponentDao(private val jdbcTemplate: JdbcTemplate) : IComponentDao {
     fun get(query: String, parameterSource: MapSqlParameterSource): List<ComponentEntity> {
         return namedTemplate.query(query, parameterSource) { rs, _ ->
             val coordinateId = rs.getInt(COORDINATE_ID)
-            val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE)[0]
+            val xCoordinate = rs.getString(CoordinateDao.X_COORDINATE).firstChar()
             val yCoordinate = rs.getInt(CoordinateDao.Y_COORDINATE)
 
             ComponentEntity(rs.getInt(PRIMARY_KEY),

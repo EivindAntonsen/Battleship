@@ -61,9 +61,9 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         executeAiPlayerTurn(player2, gameId, gameTurnId)
     }
 
-    private fun findStruckComponent(shipWithComponents: ShipWithComponents, coordinateEntity: CoordinateEntity): ComponentEntity {
-        return shipWithComponents.components.first { componentEntity ->
-            componentEntity.coordinateEntity == coordinateEntity
+    private fun findStruckComponent(shipWithComponents: ShipWithComponents, coordinate: CoordinateEntity): ComponentEntity {
+        return shipWithComponents.components.first { component ->
+            component.coordinateEntity == coordinate
         }
     }
 
@@ -92,30 +92,30 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         }
     }
 
-    private fun removeShipFromTargetedShipsIfItIsDestroyed(targetingEntity: TargetingEntity,
+    private fun removeShipFromTargetedShipsIfItIsDestroyed(targeting: TargetingEntity,
                                                            shipWithComponents: ShipWithComponents,
-                                                           struckCoordinateEntity: CoordinateEntity) {
+                                                           struckCoordinate: CoordinateEntity) {
 
         val struckShipHasNoIntactComponentsLeft = shipWithComponents.components
-                .filter { it.coordinateEntity != struckCoordinateEntity }
+                .filter { it.coordinateEntity != struckCoordinate }
                 .all { it.isDestroyed }
 
         if (struckShipHasNoIntactComponentsLeft) {
-            logger.info("\t\t\tplayer ${targetingEntity.playerId} - Updating ship status to DESTROYED.")
+            logger.info("\t\t\tplayer ${targeting.playerId} - Updating ship status to DESTROYED.")
             shipStatusDao.update(shipWithComponents.ship.id, DESTROYED)
 
-            logger.info("\t\t\tplayer ${targetingEntity.playerId} - Removing ship from targeted ships.")
-            targetingService.removeShipIdFromTargeting(targetingEntity.id, shipWithComponents.ship.id)
+            logger.info("\t\t\tplayer ${targeting.playerId} - Removing ship from targeted ships.")
+            targetingService.removeShipIdFromTargeting(targeting.id, shipWithComponents.ship.id)
         }
     }
 
-    private fun setTargetingModeToSeekIfNoTargetedShipRemains(targetingEntity: TargetingEntity) {
-        val updatedTargeting = targetingService.getTargeting(targetingEntity.playerId)
+    private fun setTargetingModeToSeekIfNoTargetedShipRemains(targeting: TargetingEntity) {
+        val updatedTargeting = targetingService.getTargeting(targeting.playerId)
         val updatedTargetedShips = targetingService.findTargetedShips(updatedTargeting.id)
 
         if (updatedTargetedShips.isEmpty()) {
-            logger.info("\t\t\tplayer ${targetingEntity.playerId} - Setting targeting mode back to SEEK")
-            targetingService.updateTargetingMode(targetingEntity.playerId, SEEK)
+            logger.info("\t\t\tplayer ${targeting.playerId} - Setting targeting mode back to SEEK")
+            targetingService.updateTargetingMode(targeting.playerId, SEEK)
         }
     }
 
@@ -123,8 +123,8 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
         return shipDao.getAllShipsForPlayer(targetPlayerId)
     }
 
-    private fun getTargetedShipIds(targetingEntityId: Int): List<Int> {
-        return targetingService.findTargetedShips(targetingEntityId).map { it.id }
+    private fun getTargetedShipIds(targetingId: Int): List<Int> {
+        return targetingService.findTargetedShips(targetingId).map { it.id }
     }
 
     override fun executeHumanPlayerTurn(turnRequest: TurnRequest): TurnResult {
@@ -133,22 +133,22 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
 
         if (turnRequest.coordinateEntity in previousCoordinates) throw IllegalTurnException(turnRequest.coordinateEntity.id)
 
-        val targetingEntity = targetingService.getTargeting(turnRequest.playerId)
-        val targetedShipIds = targetingService.findTargetedShips(targetingEntity.id).map { it.id }
+        val targeting = targetingService.getTargeting(turnRequest.playerId)
+        val targetedShipIds = targetingService.findTargetedShips(targeting.id).map { it.id }
         val allShipsForTargetPlayer = shipDao.getAllShipsForPlayer(turnRequest.targetPlayerId)
         val struckShip = getStruckShipWithComponents(allShipsForTargetPlayer, turnRequest.coordinateEntity)
 
         val isHit = if (struckShip != null) {
 
-            setTargetingModeToDestroy(targetingEntity)
+            setTargetingModeToDestroy(targeting)
 
-            addShipToTargetedShips(targetingEntity, struckShip.ship.id, targetedShipIds)
+            addShipToTargetedShips(targeting, struckShip.ship.id, targetedShipIds)
 
             updateStruckComponentToDestroyedStatus(struckShip, turnRequest.coordinateEntity)
 
-            removeShipFromTargetedShipsIfItIsDestroyed(targetingEntity, struckShip, turnRequest.coordinateEntity)
+            removeShipFromTargetedShipsIfItIsDestroyed(targeting, struckShip, turnRequest.coordinateEntity)
 
-            setTargetingModeToSeekIfNoTargetedShipRemains(targetingEntity)
+            setTargetingModeToSeekIfNoTargetedShipRemains(targeting)
 
             true
         } else false
@@ -175,54 +175,54 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
             return
         }
 
-        val targetingEntity = targetingService.getTargeting(currentPlayer.id)
-        val targetCoordinate = targetingService.getTargetCoordinate(targetingEntity)
-        val targetedShipIds = getTargetedShipIds(targetingEntity.id)
-        val allEnemyShips = getAllEnemyShips(targetingEntity.targetPlayerId)
+        val targeting = targetingService.getTargeting(currentPlayer.id)
+        val targetCoordinate = targetingService.getTargetCoordinate(targeting)
+        val targetedShipIds = getTargetedShipIds(targeting.id)
+        val allEnemyShips = getAllEnemyShips(targeting.targetPlayerId)
         val struckShipWithComponents = getStruckShipWithComponents(allEnemyShips, targetCoordinate)
         val isHit = struckShipWithComponents != null
 
         if (isHit) {
-            logger.info("Turn $gameTurn,\tplayer ${targetingEntity.playerId} - shot was a HIT.")
+            logger.info("Turn $gameTurn,\tplayer ${targeting.playerId} - shot was a HIT.")
 
             val struckComponent = findStruckComponent(struckShipWithComponents!!, targetCoordinate)
 
-            setTargetingModeToDestroy(targetingEntity)
-            addShipToTargetedShips(targetingEntity, struckComponent.shipId, targetedShipIds)
+            setTargetingModeToDestroy(targeting)
+            addShipToTargetedShips(targeting, struckComponent.shipId, targetedShipIds)
             updateStruckComponentToDestroyedStatus(struckShipWithComponents, targetCoordinate)
-            removeShipFromTargetedShipsIfItIsDestroyed(targetingEntity, struckShipWithComponents, targetCoordinate)
-            setTargetingModeToSeekIfNoTargetedShipRemains(targetingEntity)
+            removeShipFromTargetedShipsIfItIsDestroyed(targeting, struckShipWithComponents, targetCoordinate)
+            setTargetingModeToSeekIfNoTargetedShipRemains(targeting)
         }
 
         turnDao.save(gameId,
-                     targetingEntity.playerId,
-                     targetingEntity.targetPlayerId,
+                     targeting.playerId,
+                     targeting.targetPlayerId,
                      targetCoordinate.id,
                      isHit,
                      gameTurn)
     }
 
     override fun continueGame(turnRequest: TurnRequestDTO): TurnResult {
-        val coordinateEntity = coordinateDao.getAll().first { it.id == turnRequest.coordinateId }
+        val coordinate = coordinateDao.getAll().first { it.id == turnRequest.coordinateId }
         val request = TurnRequest(turnRequest.gameId,
                                   turnRequest.playerId,
                                   turnRequest.targetPlayerId,
-                                  coordinateEntity)
+                                  coordinate)
 
         return executeHumanPlayerTurn(request)
     }
 
-    private fun updateStruckComponentToDestroyedStatus(struckShip: ShipWithComponents, coordinateEntity: CoordinateEntity) {
+    private fun updateStruckComponentToDestroyedStatus(struckShip: ShipWithComponents, coordinate: CoordinateEntity) {
         val struckComponentId = struckShip.components.first { component ->
-            component.coordinateEntity == coordinateEntity
+            component.coordinateEntity == coordinate
         }.id
 
         componentDao.update(struckComponentId, true)
     }
 
-    private fun isStruckShipDestroyed(struckShip: ShipWithComponents, coordinateEntity: CoordinateEntity): Boolean {
-        return componentDao.getByShipId(struckShip.ship.id).filterNot { componentEntity ->
-            componentEntity.coordinateEntity == coordinateEntity
+    private fun isStruckShipDestroyed(struckShip: ShipWithComponents, coordinate: CoordinateEntity): Boolean {
+        return componentDao.getByShipId(struckShip.ship.id).filterNot { component ->
+            component.coordinateEntity == coordinate
         }.all { it.isDestroyed }
     }
 
@@ -232,8 +232,8 @@ class GamePlayService(private val coordinateDao: ICoordinateDao,
     private fun getStruckShipWithComponents(enemyShips: List<ShipEntity>,
                                             targetCoordinate: CoordinateEntity): ShipWithComponents? {
         return enemyShips.firstOrNull { ship ->
-            componentDao.getByShipId(ship.id).any { componentEntity ->
-                componentEntity.coordinateEntity == targetCoordinate
+            componentDao.getByShipId(ship.id).any { component ->
+                component.coordinateEntity == targetCoordinate
             }
         }?.let { ship ->
             val componentEntities = componentDao.getByShipId(ship.id)

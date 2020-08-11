@@ -6,7 +6,7 @@ import no.esa.battleship.repository.entity.CoordinateEntity
 
 interface IShipPlacementService {
     fun placeShipsForPlayer(playerId: Int)
-    fun getShipConfigurationsForShipType(availableCoordinateEntities: List<CoordinateEntity>,
+    fun getShipConfigurationsForShipType(availableCoordinates: List<CoordinateEntity>,
                                          axis: Axis,
                                          shipType: ShipType): List<List<CoordinateEntity>>
 }

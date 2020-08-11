@@ -5,5 +5,4 @@ import kotlin.reflect.KFunction
 
 class NoAvailableCoordinatesLeftException(val callingClass: KClass<*>,
                                           val callingFunction: KFunction<*>,
-                                          override val message: String) : RuntimeException() {
-}
+                                          override val message: String) : RuntimeException()
