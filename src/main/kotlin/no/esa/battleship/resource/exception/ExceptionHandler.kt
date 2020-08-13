@@ -1,6 +1,5 @@
 package no.esa.battleship.resource.exception
 
-import no.esa.battleship.exceptions.GameInitializationException
 import no.esa.battleship.exceptions.GameStateException
 import no.esa.battleship.repository.exceptions.DataAccessException
 import org.slf4j.Logger
@@ -44,17 +43,6 @@ class ExceptionHandler(@Qualifier("errorMessages") private val resourceBundle: R
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
                 .body(displayedErrorMessage)
-    }
-
-    @ExceptionHandler(GameInitializationException::class)
-    fun handle(exception: GameInitializationException): ResponseEntity<String> {
-        val logger = LoggerFactory.getLogger("GameInitializationService")
-
-        logger.error(exception.message)
-
-        return ResponseEntity
-                .status(INTERNAL_SERVER_ERROR)
-                .body(exception.message)
     }
 
     @ExceptionHandler(ConstraintViolationException::class,

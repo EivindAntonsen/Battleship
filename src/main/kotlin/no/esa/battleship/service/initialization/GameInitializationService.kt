@@ -4,7 +4,7 @@ import no.esa.battleship.enums.PlayerType
 import no.esa.battleship.enums.PlayerType.AI
 import no.esa.battleship.enums.PlayerType.HUMAN
 import no.esa.battleship.enums.Strategy
-import no.esa.battleship.exceptions.GameInitializationException.TooManyPlayers
+import no.esa.battleship.exceptions.TooManyPlayersException
 import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.game.IGameDao
@@ -64,6 +64,6 @@ class GameInitializationService(private val logger: Logger,
             playerStrategyDao.save(playerId, strategy)
 
             PlayerEntity(playerId, playerType.id, game.id)
-        } else throw TooManyPlayers(game.id)
+        } else throw TooManyPlayersException(game.id)
     }
 }

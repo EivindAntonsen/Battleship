@@ -1,11 +1,13 @@
 package no.esa.battleship.service.targeting
 
-import no.esa.battleship.enums.*
+import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
+import no.esa.battleship.enums.ShipStatus
+import no.esa.battleship.enums.ShipType
+import no.esa.battleship.enums.TargetingMode
 import no.esa.battleship.enums.TargetingMode.SEEK
-import no.esa.battleship.exceptions.NoAvailableCoordinatesLeftException
-import no.esa.battleship.exceptions.NoValidCoordinatesException
+import no.esa.battleship.exceptions.TargetingException.*
 import no.esa.battleship.repository.component.IComponentDao
 import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.entity.CoordinateEntity
@@ -55,16 +57,16 @@ class TargetingService(private val componentDao: IComponentDao,
         return if (scoringWasUnsuccessful) {
             selectRandomCoordinateForPlayer(playerId, availableCoordinates)
         } else getHighestRankingCoordinate(scoreMap, previousCoordinates)
-                ?: throw NoAvailableCoordinatesLeftException(this::class, ::seek, when {
+                ?: when {
                     intactShipTypes.isNotEmpty() && availableCoordinates.isEmpty() ->
-                        "There are intact ships remaining, but no available coordinates!"
+                        throw NotEnoughAvailableCoordinatesException("There are intact ships remaining, but no available coordinates!")
                     availableCoordinates.isEmpty() ->
-                        "There are no available coordinates left. Game should've ended by now!"
+                        throw NoAvailableCoordinatesException("There are no available coordinates left. Game should've ended by now!")
                     scoreMap.isNotEmpty() ->
-                        "Scoremap is not empty, but it still couldn't select a highest ranking coordinate!"
+                        throw ScoringException("Scoremap is not empty, but it still couldn't select a highest ranking coordinate!")
                     else ->
-                        "Couldn't find coordinate due to an unknown cause!"
-                })
+                        throw NoAvailableCoordinatesException("Couldn't find coordinate due to an unknown cause!")
+                }
     }
 
     /**
@@ -91,9 +93,7 @@ class TargetingService(private val componentDao: IComponentDao,
                                                                                           struckCoordinatesOnCurrentlyTargetedShips)
 
         return coordinatesAdjacentWithPreviousHits.shuffled().firstOrNull()
-                ?: throw NoValidCoordinatesException(this::class,
-                                                     ::destroy,
-                                                     "Found no suitable coordinates!")
+                ?: throw NoAvailableCoordinatesException("Found no suitable coordinates!")
     }
 
     /**
@@ -114,9 +114,7 @@ class TargetingService(private val componentDao: IComponentDao,
                                             axis: Axis): List<Map<CoordinateEntity, Int>> {
 
         if (availableCoordinates.isEmpty()) {
-            throw NoValidCoordinatesException(this::class,
-                                              ::scoreCoordinatesByShipTypes,
-                                              "There are no coordinates to score!")
+            throw NoAvailableCoordinatesException("There are no coordinates to score!")
         }
 
         return shipTypes.map { shipType ->
@@ -140,13 +138,12 @@ class TargetingService(private val componentDao: IComponentDao,
                         rangeOfRequiredIndices.map { requiredIndex ->
                             coordinates[requiredIndex]
                         }.takeIf(::coordinatesAreAdjacent)
+
                     } else null
                 }
             }
         }.map { (_, coordinates) ->
-            coordinates.groupingBy { coordinate ->
-                coordinate
-            }.eachCount()
+            coordinates.groupingBy { it }.eachCount()
         }
     }
 

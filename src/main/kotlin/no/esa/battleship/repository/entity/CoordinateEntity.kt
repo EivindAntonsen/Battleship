@@ -1,7 +1,5 @@
 package no.esa.battleship.repository.entity
 
-import no.esa.battleship.exceptions.NoSuchCoordinateException
-
 data class CoordinateEntity(val id: Int,
                             val horizontalPosition: Char,
                             val verticalPosition: Int) {
@@ -13,6 +11,6 @@ data class CoordinateEntity(val id: Int,
     }
 
     fun horizontalPositionAsInt(): Int {
-        return HORIZONTAL_POSITION_TO_INT[horizontalPosition] ?: throw NoSuchCoordinateException(horizontalPosition)
+        return HORIZONTAL_POSITION_TO_INT.getValue(horizontalPosition)
     }
 }

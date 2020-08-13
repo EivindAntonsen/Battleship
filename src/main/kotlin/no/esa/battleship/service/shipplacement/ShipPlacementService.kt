@@ -4,15 +4,18 @@ import no.esa.battleship.enums.Axis
 import no.esa.battleship.enums.Axis.HORIZONTAL
 import no.esa.battleship.enums.Axis.VERTICAL
 import no.esa.battleship.enums.ShipType
-import no.esa.battleship.exceptions.GameInitializationException.ShipPlacement
+import no.esa.battleship.exceptions.ShipConfigurationException.InvalidAlignmentException
+import no.esa.battleship.exceptions.ShipConfigurationException.NoCoordinatesFoundException
 import no.esa.battleship.repository.component.IComponentDao
 import no.esa.battleship.repository.coordinate.ICoordinateDao
 import no.esa.battleship.repository.entity.CoordinateEntity
 import no.esa.battleship.repository.entity.ShipEntity
 import no.esa.battleship.repository.ship.IShipDao
 import no.esa.battleship.repository.shipstatus.IShipStatusDao
+import no.esa.battleship.utils.isAdjacentWith
 import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
+import no.esa.battleship.utils.validateElements
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -122,8 +125,8 @@ class ShipPlacementService(private val logger: Logger,
                                                         availableCoordinates)
 
         if (shipConfiguration.isNullOrEmpty()) {
-            throw ShipPlacement("Could not place ship: Unable to verify all found coordinates were available.")
-        }
+            throw NoCoordinatesFoundException("Unable to place ship because no valid ship configuration was found.")
+        } else validateShipConfiguration(shipConfiguration)
 
         val ship = shipDao.save(playerId, shipType.id)
 
@@ -131,6 +134,21 @@ class ShipPlacementService(private val logger: Logger,
         shipStatusDao.save(ship.id)
 
         return ship
+    }
+
+    /**
+     * Verifies the relationship between components in a ship configuration.
+     *
+     * Checks that they are aligned and linked.
+     */
+    private fun validateShipConfiguration(shipConfiguration: List<CoordinateEntity>) {
+        val validAlignment = shipConfiguration.validateElements { currentCoordinate, nextCoordinate ->
+            currentCoordinate isAdjacentWith nextCoordinate
+        }
+
+        if (!validAlignment) {
+            throw InvalidAlignmentException("Coordinates in shipConfiguration $shipConfiguration are not aligned!")
+        }
     }
 
     /**
@@ -165,7 +183,7 @@ class ShipPlacementService(private val logger: Logger,
                     coordinate isHorizontallyAlignedWith indexCoordinate && coordinate.horizontalPositionAsInt() in allowedRange
                 }
             }.ifEmpty {
-                throw ShipPlacement("Unable to generate a list of coordinates on a $axis plane for $shipType!")
+                throw NoCoordinatesFoundException("Unable to generate a list of coordinates on a $axis plane for $shipType!")
             }.takeIf { coordinates ->
                 coordinates.size == shipType.size
             }

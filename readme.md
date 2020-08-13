@@ -27,7 +27,7 @@ I use this project to show my code style and how I solve certain problems (datab
 
 Human vs AI games, simple frontend are the two planned features next up.
 
-#### Concepts used in this project
+#### Some concepts used in this project
 
 * Aspect oriented programming
     * Logging
@@ -45,3 +45,6 @@ Human vs AI games, simple frontend are the two planned features next up.
     * The game API is automatically generated from code that follows the OpenAPI specification.
       This is found in `src/main/resources/api-definition`. 
     * This means the Battleship API will be language agnostic and can be integrated with anything following the same standard.
+* Extension functions
+    * `Iterable<T>.validateElements` in `/battleship/utils/Utils.kt`.
+    * `Iterable<T>.flatMapIndexedNotNull` in `/battleship/utils/Utils.kt`.

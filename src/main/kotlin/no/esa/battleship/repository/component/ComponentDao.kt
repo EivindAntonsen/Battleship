@@ -10,6 +10,8 @@ import no.esa.battleship.repository.entity.PlayerEntity
 import no.esa.battleship.repository.player.PlayerDao
 import no.esa.battleship.repository.ship.ShipDao
 import no.esa.battleship.utils.firstChar
+import no.esa.battleship.utils.isAdjacentWith
+import no.esa.battleship.utils.validateElements
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

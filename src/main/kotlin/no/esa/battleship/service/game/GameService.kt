@@ -1,7 +1,6 @@
 package no.esa.battleship.service.game
 
 import no.esa.battleship.enums.ShipStatus
-import no.esa.battleship.exceptions.InvalidPerformanceException
 import no.esa.battleship.repository.component.IComponentDao
 import no.esa.battleship.repository.entity.GameEntity
 import no.esa.battleship.repository.entity.PlayerEntity
@@ -91,10 +90,7 @@ class GameService(private val turnDao: ITurnDao,
         val hitCount = previousTurns.filter { it.isHit }.count()
         val missCount = previousTurns.filterNot { it.isHit }.count()
         val totalCount = hitCount + missCount
-
-        if (totalCount == 0) throw InvalidPerformanceException(player.id)
-
-        val hitRate = hitCount.toDouble() / totalCount.toDouble()
+        val hitRate = if (totalCount == 0) 0.0 else hitCount.toDouble() / totalCount.toDouble()
 
         return PerformanceAnalysis(player, totalCount, hitCount, missCount, hitRate)
     }
