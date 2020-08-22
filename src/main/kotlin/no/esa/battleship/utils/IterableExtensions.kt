@@ -16,7 +16,8 @@ private inline fun <T, R, C : MutableCollection<in R>> Iterable<T>.flatMapIndexe
     return destination
 }
 
-inline fun <S, T : S> Iterable<T>.validateElements(validationFunction: (acc: S, T) -> Boolean): Boolean {
+@Deprecated("Use zipWithNext instead.")
+inline fun <S, T : S> Iterable<T>.validatedFold(validationFunction: (acc: S, T) -> Boolean): Boolean {
     val iterator = this.iterator()
     if (!iterator.hasNext()) return false
 

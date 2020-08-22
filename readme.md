@@ -45,6 +45,3 @@ Human vs AI games, simple frontend are the two planned features next up.
     * The game API is automatically generated from code that follows the OpenAPI specification.
       This is found in `src/main/resources/api-definition`. 
     * This means the Battleship API will be language agnostic and can be integrated with anything following the same standard.
-* Extension functions
-    * `Iterable<T>.validateElements` in `/battleship/utils/Utils.kt`.
-    * `Iterable<T>.flatMapIndexedNotNull` in `/battleship/utils/Utils.kt`.

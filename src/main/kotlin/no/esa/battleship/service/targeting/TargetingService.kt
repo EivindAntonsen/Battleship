@@ -23,7 +23,7 @@ import no.esa.battleship.service.domain.Components
 import no.esa.battleship.service.domain.ShipWithComponents
 import no.esa.battleship.utils.flatMapIndexedNotNull
 import no.esa.battleship.utils.isAdjacentWith
-import no.esa.battleship.utils.validateElements
+import no.esa.battleship.utils.validatedFold
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -269,9 +269,9 @@ class TargetingService(private val componentDao: IComponentDao,
                 HORIZONTAL -> coordinate.horizontalPositionAsInt()
                 VERTICAL -> coordinate.verticalPosition
             }
-        }.validateElements { current, next ->
+        }.asSequence().zipWithNext { current, next ->
             current isAdjacentWith next
-        }
+        }.all { it }
     }
 
     override fun getTargeting(playerId: Int): TargetingEntity {

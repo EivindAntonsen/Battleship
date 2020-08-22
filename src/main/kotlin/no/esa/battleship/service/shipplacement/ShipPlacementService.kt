@@ -15,7 +15,7 @@ import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.utils.isAdjacentWith
 import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
-import no.esa.battleship.utils.validateElements
+import no.esa.battleship.utils.validatedFold
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -142,9 +142,9 @@ class ShipPlacementService(private val logger: Logger,
      * Checks that they are aligned and linked.
      */
     private fun validateShipConfiguration(shipConfiguration: List<CoordinateEntity>) {
-        val validAlignment = shipConfiguration.validateElements { currentCoordinate, nextCoordinate ->
+        val validAlignment = shipConfiguration.asSequence().zipWithNext { currentCoordinate, nextCoordinate ->
             currentCoordinate isAdjacentWith nextCoordinate
-        }
+        }.all { it }
 
         if (!validAlignment) {
             throw InvalidAlignmentException("Coordinates in shipConfiguration $shipConfiguration are not aligned!")

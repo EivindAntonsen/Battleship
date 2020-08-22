@@ -1,16 +1,14 @@
 package no.esa.battleship.enums
 
-import no.esa.battleship.exceptions.NoSuchShipStatusException
-
 enum class ShipStatus(val id: Int) {
     INTACT(1),
     DESTROYED(2);
 
     companion object {
         fun fromId(id: Int): ShipStatus {
-            return values().firstOrNull {
+            return values().first {
                 it.id == id
-            } ?: throw NoSuchShipStatusException(id)
+            }
         }
     }
 }

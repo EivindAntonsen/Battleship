@@ -11,9 +11,9 @@ enum class ShipType(val id: Int, val size: Int) {
 
     companion object {
         fun fromInt(id: Int): ShipType {
-            return values().firstOrNull {
+            return values().first {
                 it.id == id
-            } ?: throw NoSuchShipTypeException(id)
+            }
         }
     }
 }
