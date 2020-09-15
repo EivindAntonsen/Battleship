@@ -15,7 +15,6 @@ import no.esa.battleship.repository.shipstatus.IShipStatusDao
 import no.esa.battleship.utils.isAdjacentWith
 import no.esa.battleship.utils.isHorizontallyAlignedWith
 import no.esa.battleship.utils.isVerticallyAlignedWith
-import no.esa.battleship.utils.validatedFold
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 

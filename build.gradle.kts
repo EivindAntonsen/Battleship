@@ -83,6 +83,7 @@ dependencies {
     implementation(group = "io.springfox", name = "springfox-swagger2", version = "2.9.2")
     implementation(group = "io.springfox", name = "springfox-swagger-ui", version = "2.9.2")
     //implementation(group = "org.springframework.retry", name = "spring-retry", version = "1.2.5.RELEASE")
+    implementation(kotlin("stdlib-jdk8"))
 }
 tasks {
     create<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("buildKotlinClient") {
@@ -115,4 +116,12 @@ tasks {
     withType<Test> {
         useJUnitPlatform()
     }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

@@ -23,7 +23,6 @@ import no.esa.battleship.service.domain.Components
 import no.esa.battleship.service.domain.ShipWithComponents
 import no.esa.battleship.utils.flatMapIndexedNotNull
 import no.esa.battleship.utils.isAdjacentWith
-import no.esa.battleship.utils.validatedFold
 import org.slf4j.Logger
 import org.springframework.stereotype.Service
 
@@ -100,7 +99,8 @@ class TargetingService(private val componentDao: IComponentDao,
      * This attempts to score every coordinate on the game board for every ship.
      *
      * This is done by counting the number of available configurations a ship can be placed
-     * in across the game board, then returning a map of coordinates and their associated count (score).
+     * in across the game board (valid positions only),
+     * then returning maps of coordinates and their associated count (score).
      * The higher count, the more likely it is a ship is placed there.
      *
      * @param availableCoordinates are coordinates that have not yet been struck.
