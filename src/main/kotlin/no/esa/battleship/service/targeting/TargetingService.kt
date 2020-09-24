@@ -118,17 +118,11 @@ class TargetingService(private val componentDao: IComponentDao,
         }
 
         return shipTypes.map { shipType ->
-            shipType to availableCoordinates.groupBy { coordinate ->
-                when (axis) {
-                    VERTICAL -> coordinate.verticalPosition
-                    HORIZONTAL -> coordinate.horizontalPositionAsInt()
-                }
+            shipType to availableCoordinates.groupBy {
+                getAxialPosition(it, axis)
             }.flatMap { (_, coordinates) ->
-                coordinates.sortedBy { coordinate ->
-                    when (axis) {
-                        VERTICAL -> coordinate.verticalPosition
-                        HORIZONTAL -> coordinate.horizontalPositionAsInt()
-                    }
+                coordinates.sortedBy {
+                    getAxialPosition(it, axis)
                 }.flatMapIndexedNotNull { index, _ ->
                     val coordinatesFromIndexCanFitShip = index + shipType.size < coordinates.size
 
@@ -138,12 +132,21 @@ class TargetingService(private val componentDao: IComponentDao,
                         rangeOfRequiredIndices.map { requiredIndex ->
                             coordinates[requiredIndex]
                         }.takeIf(::coordinatesAreAdjacent)
-
                     } else null
                 }
             }
         }.map { (_, coordinates) ->
             coordinates.groupingBy { it }.eachCount()
+        }
+    }
+
+    /**
+     * Gets the position value for a [coordinate] on the specified [axis].
+     */
+    private fun getAxialPosition(coordinate: CoordinateEntity, axis: Axis): Int {
+        return when (axis) {
+            VERTICAL -> coordinate.verticalPosition
+            HORIZONTAL -> coordinate.horizontalPositionAsInt()
         }
     }
 
